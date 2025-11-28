@@ -11,7 +11,7 @@ class AIHunterGame {
             { name: 'T5', icon: '🔄', caught: false, rarity: 'common' },
             { name: 'GPT-3', icon: '⚡', caught: false, rarity: 'rare' },
             { name: 'Mistral', icon: '🌪️', caught: false, rarity: 'epic' },
-            { name: 'Falcon', icon: '🦅', caught: false, rarity: 'rare' }
+            { name: 'Falcons', icon: '🦅', caught: false, rarity: 'rare' }
         ];
         
         this.currentAI = null;
@@ -776,3 +776,4 @@ class AIHunterGame {
 document.addEventListener('DOMContentLoaded', () => {
     new AIHunterGame();
 });
+
