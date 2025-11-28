@@ -29,7 +29,9 @@ class AIHunterGame {
         // Track player's physical position
         this.playerPosition = { x: 0, y: 0, z: 0 };
         this.lastCapturePosition = null;
-        this.minMovementDistance = 1; // meters
+        this.minMovementDistance = 3; // meters
+        this.distanceTraveled = 0;
+        this.waitingForMovement = false;
         
         this.aiVisible = false;
         this.aiInFrame = false;
@@ -73,7 +75,7 @@ class AIHunterGame {
 
         document.getElementById('continue-btn').addEventListener('click', () => {
             this.hideModal('success-modal');
-            // Continue button now does nothing as next AI spawns automatically
+            this.startMovementPhase();
         });
 
         document.getElementById('view-collection-btn').addEventListener('click', () => {
@@ -218,9 +220,21 @@ class AIHunterGame {
                     velocity.z *= 0.95;
                     
                     // Integrate velocity to get position
+                    const oldPosition = { ...this.playerPosition };
                     this.playerPosition.x += velocity.x * deltaTime;
                     this.playerPosition.y += velocity.y * deltaTime;
                     this.playerPosition.z += velocity.z * deltaTime;
+                    
+                    // Track distance if waiting for movement
+                    if (this.waitingForMovement && this.lastCapturePosition) {
+                        const movementDelta = this.calculateDistance(oldPosition, this.playerPosition);
+                        this.distanceTraveled += movementDelta;
+                        this.updateDistanceCounter();
+                        
+                        if (this.distanceTraveled >= this.minMovementDistance) {
+                            this.spawnNextAI();
+                        }
+                    }
                     
                     lastTime = currentTime;
                 }
@@ -461,13 +475,17 @@ class AIHunterGame {
     }
 
     spawnNextAI() {
+        if (this.waitingForMovement) {
+            this.waitingForMovement = false;
+            this.hideDistanceCounter();
+        }
+        
         const uncaught = this.aiModels.filter(ai => !ai.caught);
         if (uncaught.length === 0) {
             this.gameComplete();
             return;
         }
         
-        // Spawn immediately without timer
         this.spawnAI();
     }
 
@@ -549,11 +567,7 @@ class AIHunterGame {
         this.updateInventory();
         this.showModal('success-modal');
         
-        // Spawn next AI immediately after capture
-        setTimeout(() => {
-            this.hideModal('success-modal');
-            this.spawnNextAI();
-        }, 2000);
+        // Don't auto-spawn - wait for continue button
     }
 
     gameComplete() {
@@ -693,6 +707,58 @@ class AIHunterGame {
         document.body.appendChild(notification);
         
         setTimeout(() => notification.remove(), 5000);
+    }
+    
+    startMovementPhase() {
+        // 10-second delay before movement tracking starts
+        setTimeout(() => {
+            this.waitingForMovement = true;
+            this.distanceTraveled = 0;
+            this.lastCapturePosition = { ...this.playerPosition };
+            this.showDistanceCounter();
+        }, 10000);
+    }
+    
+    updateDistanceCounter() {
+        const counter = document.getElementById('distance-counter');
+        if (counter) {
+            const remaining = Math.max(0, this.minMovementDistance - this.distanceTraveled);
+            counter.innerHTML = `
+                <div>WALK TO UNLOCK NEXT TARGET</div>
+                <div style="font-size: 18px; margin: 8px 0;">${remaining.toFixed(1)}m remaining</div>
+                <div style="width: 200px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; margin: 0 auto;">
+                    <div style="width: ${Math.min(100, (this.distanceTraveled / this.minMovementDistance) * 100)}%; height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.3s;"></div>
+                </div>
+            `;
+        }
+    }
+    
+    showDistanceCounter() {
+        const counter = document.createElement('div');
+        counter.id = 'distance-counter';
+        counter.style.cssText = `
+            position: fixed;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 240, 255, 0.1);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 16px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            color: var(--primary);
+            letter-spacing: 1px;
+            text-align: center;
+            z-index: 1000;
+        `;
+        document.body.appendChild(counter);
+        this.updateDistanceCounter();
+    }
+    
+    hideDistanceCounter() {
+        const counter = document.getElementById('distance-counter');
+        if (counter) counter.remove();
     }
     
     calculateDistance(pos1, pos2) {
