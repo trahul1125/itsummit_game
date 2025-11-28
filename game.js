@@ -134,28 +134,16 @@ class AIHunterGame {
     }
 
     setupMotionTracking() {
-        // Always try motion first
+        // Force motion tracking only
         if (window.DeviceOrientationEvent) {
             if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                // iOS 13+ requires permission
-                DeviceOrientationEvent.requestPermission()
-                    .then(response => {
-                        if (response === 'granted') {
-                            this.enableMotion();
-                        } else {
-                            this.fallbackToTouch();
-                        }
-                    })
-                    .catch(() => {
-                        console.log('Motion permission denied, using touch');
-                        this.fallbackToTouch();
-                    });
+                // Show permission button immediately
+                this.showCalibrationHint();
             } else {
-                // Android and older iOS
+                // Android and older iOS - start immediately
                 this.enableMotion();
             }
         } else {
-            console.log('Device orientation not supported, using touch');
             this.fallbackToTouch();
         }
     }
@@ -164,39 +152,31 @@ class AIHunterGame {
         let initialAlpha = null;
         let initialBeta = null;
         let calibrated = false;
-        let motionTimeout;
         
-        this.showCalibrationHint();
-        
-        // Set timeout to fallback if motion doesn't work
-        motionTimeout = setTimeout(() => {
-            if (!this.motionSupported) {
-                this.hideCalibrationHint();
-                this.fallbackToTouch();
-            }
-        }, 3000);
+        if (typeof DeviceOrientationEvent.requestPermission !== 'function') {
+            this.showCalibrationHint();
+        }
         
         // Track device orientation
         const handleOrientation = (e) => {
-            if (e.alpha !== null && e.beta !== null && e.gamma !== null) {
+            if (e.alpha !== null && e.beta !== null) {
                 this.motionSupported = true;
-                clearTimeout(motionTimeout);
                 
                 if (!calibrated) {
-                    initialAlpha = e.alpha;
-                    initialBeta = e.beta;
+                    initialAlpha = e.alpha || 0;
+                    initialBeta = e.beta || 0;
                     calibrated = true;
                     this.hideCalibrationHint();
                     return;
                 }
                 
-                let alphaOffset = e.alpha - initialAlpha;
+                let alphaOffset = (e.alpha || 0) - initialAlpha;
                 if (alphaOffset > 180) alphaOffset -= 360;
                 if (alphaOffset < -180) alphaOffset += 360;
                 
                 this.heading = -alphaOffset;
                 
-                let betaOffset = e.beta - initialBeta;
+                let betaOffset = (e.beta || 0) - initialBeta;
                 this.pitch = betaOffset * 0.8;
                 
                 while (this.heading > 180) this.heading -= 360;
@@ -206,8 +186,6 @@ class AIHunterGame {
         };
         
         window.addEventListener('deviceorientation', handleOrientation);
-        
-        // Also try deviceorientationabsolute for better support
         window.addEventListener('deviceorientationabsolute', handleOrientation);
         
         // Track physical movement with accelerometer
@@ -251,50 +229,27 @@ class AIHunterGame {
     }
 
     fallbackToTouch() {
-        // Enable basic touch controls as fallback
-        let lastTouchX = null;
-        let lastTouchY = null;
-        let isDragging = false;
+        // No touch controls - motion only
+        console.log('Motion tracking required - no touch fallback');
         
-        const handleStart = (clientX, clientY) => {
-            isDragging = true;
-            lastTouchX = clientX;
-            lastTouchY = clientY;
-        };
-        
-        const handleMove = (clientX, clientY) => {
-            if (!isDragging) return;
-            
-            const deltaX = clientX - lastTouchX;
-            const deltaY = clientY - lastTouchY;
-            
-            this.heading += deltaX * 0.3;
-            this.pitch -= deltaY * 0.2;
-            
-            while (this.heading > 180) this.heading -= 360;
-            while (this.heading < -180) this.heading += 360;
-            this.pitch = Math.max(-60, Math.min(60, this.pitch));
-            
-            lastTouchX = clientX;
-            lastTouchY = clientY;
-        };
-        
-        const handleEnd = () => {
-            isDragging = false;
-        };
-
-        document.addEventListener('touchstart', (e) => {
-            const touch = e.touches[0];
-            handleStart(touch.clientX, touch.clientY);
-        });
-
-        document.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            handleMove(touch.clientX, touch.clientY);
-        }, { passive: false });
-
-        document.addEventListener('touchend', handleEnd);
+        // Show message to user
+        const message = document.createElement('div');
+        message.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 1000;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+        `;
+        message.innerHTML = 'DEVICE MOTION REQUIRED<br><small>Please enable motion permissions</small>';
+        document.body.appendChild(message);
     }
 
     startGameLoop() {
@@ -694,13 +649,11 @@ class AIHunterGame {
                             hint.innerHTML = 'HOLD PHONE STEADY<br>CALIBRATING...';
                             this.enableMotion();
                         } else {
-                            this.hideCalibrationHint();
-                            this.fallbackToTouch();
+                            hint.innerHTML = 'MOTION PERMISSION DENIED<br><small>Game requires motion tracking</small>';
                         }
                     })
                     .catch(() => {
-                        this.hideCalibrationHint();
-                        this.fallbackToTouch();
+                        hint.innerHTML = 'MOTION PERMISSION FAILED<br><small>Game requires motion tracking</small>';
                     });
             });
         } else {
