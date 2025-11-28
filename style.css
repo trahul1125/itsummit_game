@@ -210,6 +210,27 @@ body {
     50%, 100% { left: 100%; }
 }
 
+.scoreboard-btn {
+    width: 100%;
+    padding: 14px 30px;
+    background: linear-gradient(90deg, var(--accent), var(--secondary));
+    border: none;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: white;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+.scoreboard-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(124, 58, 237, 0.3);
+}
+
 #game-page {
     background: #000;
 }
@@ -641,6 +662,80 @@ body {
     padding: 20px;
     overflow-y: auto;
     flex: 1;
+}
+
+#scoreboard-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.scoreboard-item {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s ease;
+}
+
+.scoreboard-item:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: var(--primary);
+}
+
+.scoreboard-item .rank {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary);
+    min-width: 50px;
+    text-align: center;
+}
+
+.scoreboard-item .player-info {
+    flex: 1;
+}
+
+.scoreboard-item .name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.scoreboard-item .org {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.6);
+}
+
+.scoreboard-item .score-info {
+    text-align: right;
+}
+
+.scoreboard-item .captured {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--success);
+    margin-bottom: 2px;
+}
+
+.scoreboard-item .time {
+    font-size: 0.8rem;
+    color: var(--primary);
+    margin-bottom: 2px;
+}
+
+.scoreboard-item .date {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.4);
 }
 
 .inventory-item {
