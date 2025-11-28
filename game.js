@@ -134,8 +134,10 @@ class AIHunterGame {
     }
 
     setupMotionTracking() {
+        // Always try motion first
         if (window.DeviceOrientationEvent) {
             if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ requires permission
                 DeviceOrientationEvent.requestPermission()
                     .then(response => {
                         if (response === 'granted') {
@@ -144,11 +146,16 @@ class AIHunterGame {
                             this.fallbackToTouch();
                         }
                     })
-                    .catch(() => this.fallbackToTouch());
+                    .catch(() => {
+                        console.log('Motion permission denied, using touch');
+                        this.fallbackToTouch();
+                    });
             } else {
+                // Android and older iOS
                 this.enableMotion();
             }
         } else {
+            console.log('Device orientation not supported, using touch');
             this.fallbackToTouch();
         }
     }
@@ -157,23 +164,29 @@ class AIHunterGame {
         let initialAlpha = null;
         let initialBeta = null;
         let calibrated = false;
+        let motionTimeout;
         
         this.showCalibrationHint();
         
+        // Set timeout to fallback if motion doesn't work
+        motionTimeout = setTimeout(() => {
+            if (!this.motionSupported) {
+                this.hideCalibrationHint();
+                this.fallbackToTouch();
+            }
+        }, 3000);
+        
         // Track device orientation
-        window.addEventListener('deviceorientation', (e) => {
-            if (e.alpha !== null && e.beta !== null) {
+        const handleOrientation = (e) => {
+            if (e.alpha !== null && e.beta !== null && e.gamma !== null) {
                 this.motionSupported = true;
+                clearTimeout(motionTimeout);
                 
                 if (!calibrated) {
-                    setTimeout(() => {
-                        if (initialAlpha === null) {
-                            initialAlpha = e.alpha;
-                            initialBeta = e.beta;
-                            calibrated = true;
-                            this.hideCalibrationHint();
-                        }
-                    }, 2000);
+                    initialAlpha = e.alpha;
+                    initialBeta = e.beta;
+                    calibrated = true;
+                    this.hideCalibrationHint();
                     return;
                 }
                 
@@ -181,15 +194,21 @@ class AIHunterGame {
                 if (alphaOffset > 180) alphaOffset -= 360;
                 if (alphaOffset < -180) alphaOffset += 360;
                 
-                this.heading = -alphaOffset * 1.2;
+                this.heading = -alphaOffset;
                 
                 let betaOffset = e.beta - initialBeta;
-                this.pitch = betaOffset * 1.0;
+                this.pitch = betaOffset * 0.8;
                 
-                this.heading = Math.max(-270, Math.min(270, this.heading));
-                this.pitch = Math.max(-90, Math.min(90, this.pitch));
+                while (this.heading > 180) this.heading -= 360;
+                while (this.heading < -180) this.heading += 360;
+                this.pitch = Math.max(-60, Math.min(60, this.pitch));
             }
-        });
+        };
+        
+        window.addEventListener('deviceorientation', handleOrientation);
+        
+        // Also try deviceorientationabsolute for better support
+        window.addEventListener('deviceorientationabsolute', handleOrientation);
         
         // Track physical movement with accelerometer
         if (window.DeviceMotionEvent) {
@@ -232,9 +251,50 @@ class AIHunterGame {
     }
 
     fallbackToTouch() {
-        // Disable touch controls - use device orientation only
-        // This prevents dragging AI models around with finger
-        console.log('Touch controls disabled - use device orientation');
+        // Enable basic touch controls as fallback
+        let lastTouchX = null;
+        let lastTouchY = null;
+        let isDragging = false;
+        
+        const handleStart = (clientX, clientY) => {
+            isDragging = true;
+            lastTouchX = clientX;
+            lastTouchY = clientY;
+        };
+        
+        const handleMove = (clientX, clientY) => {
+            if (!isDragging) return;
+            
+            const deltaX = clientX - lastTouchX;
+            const deltaY = clientY - lastTouchY;
+            
+            this.heading += deltaX * 0.3;
+            this.pitch -= deltaY * 0.2;
+            
+            while (this.heading > 180) this.heading -= 360;
+            while (this.heading < -180) this.heading += 360;
+            this.pitch = Math.max(-60, Math.min(60, this.pitch));
+            
+            lastTouchX = clientX;
+            lastTouchY = clientY;
+        };
+        
+        const handleEnd = () => {
+            isDragging = false;
+        };
+
+        document.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            handleStart(touch.clientX, touch.clientY);
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            handleMove(touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        document.addEventListener('touchend', handleEnd);
     }
 
     startGameLoop() {
@@ -617,7 +677,36 @@ class AIHunterGame {
             font-size: 14px;
             letter-spacing: 2px;
         `;
-        hint.innerHTML = 'HOLD PHONE STEADY<br>CALIBRATING...';
+        
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            hint.innerHTML = `
+                <div>MOTION PERMISSION REQUIRED</div>
+                <button onclick="this.parentElement.dispatchEvent(new Event('requestMotion'))" 
+                       style="margin-top: 10px; padding: 8px 16px; background: white; color: black; border: none; border-radius: 4px; cursor: pointer;">
+                    ENABLE MOTION
+                </button>
+            `;
+            
+            hint.addEventListener('requestMotion', () => {
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            hint.innerHTML = 'HOLD PHONE STEADY<br>CALIBRATING...';
+                            this.enableMotion();
+                        } else {
+                            this.hideCalibrationHint();
+                            this.fallbackToTouch();
+                        }
+                    })
+                    .catch(() => {
+                        this.hideCalibrationHint();
+                        this.fallbackToTouch();
+                    });
+            });
+        } else {
+            hint.innerHTML = 'HOLD PHONE STEADY<br>CALIBRATING...';
+        }
+        
         document.body.appendChild(hint);
     }
     
