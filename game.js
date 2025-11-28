@@ -105,7 +105,11 @@ class AIHunterGame {
         });
 
         document.getElementById('back-from-scoreboard').addEventListener('click', () => {
-            this.showPage('landing-page');
+            this.showGame();
+        });
+
+        document.getElementById('scoreboard-game-btn').addEventListener('click', () => {
+            this.showScoreboard();
         });
     }
 
