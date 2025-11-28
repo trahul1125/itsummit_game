@@ -29,7 +29,7 @@ class AIHunterGame {
         // Track player's physical position
         this.playerPosition = { x: 0, y: 0, z: 0 };
         this.lastCapturePosition = null;
-        this.minMovementDistance = 3; // meters
+        this.minMovementDistance = 1; // meters
         
         this.aiVisible = false;
         this.aiInFrame = false;
@@ -73,7 +73,7 @@ class AIHunterGame {
 
         document.getElementById('continue-btn').addEventListener('click', () => {
             this.hideModal('success-modal');
-            this.scheduleNextSpawn();
+            // Continue button now does nothing as next AI spawns automatically
         });
 
         document.getElementById('view-collection-btn').addEventListener('click', () => {
@@ -116,7 +116,7 @@ class AIHunterGame {
             this.showPage('game-page');
             this.setupMotionTracking();
             this.startGameLoop();
-            this.scheduleNextSpawn();
+            this.spawnNextAI();
             
         } catch (error) {
             alert('Camera access is required to play. Please allow camera permissions and try again.');
@@ -307,8 +307,8 @@ class AIHunterGame {
             
             const pitchDiff = this.aiPitch - this.pitch;
             
-            const fovH = 70;
-            const fovV = 50;
+            const fovH = 120;
+            const fovV = 90;
             
             this.aiVisible = Math.abs(angleDiff) < fovH && Math.abs(pitchDiff) < fovV;
             
@@ -496,24 +496,15 @@ class AIHunterGame {
         this.ctx.restore();
     }
 
-    scheduleNextSpawn() {
-        if (this.spawnTimer) clearTimeout(this.spawnTimer);
-        
+    spawnNextAI() {
         const uncaught = this.aiModels.filter(ai => !ai.caught);
         if (uncaught.length === 0) {
             this.gameComplete();
             return;
         }
         
-        // Fixed 30-second intervals to force movement
-        const delay = 30000; // Exactly 30 seconds
-        
-        // Show countdown timer
-        this.showSpawnCountdown(delay);
-        
-        this.spawnTimer = setTimeout(() => {
-            this.spawnAI();
-        }, delay);
+        // Spawn immediately without timer
+        this.spawnAI();
     }
 
     spawnAI() {
@@ -524,14 +515,14 @@ class AIHunterGame {
         
         // ABSOLUTE positioning - forces physical movement
         const positions = [
-            { type: 'ceiling', pitch: -75, angle: 'random', hint: 'WALK TO DIFFERENT ROOM - LOOK UP', distance: 4 },
-            { type: 'floor', pitch: 80, angle: 'random', hint: 'MOVE TO CORNER - LOOK DOWN', distance: 3 },
-            { type: 'far_wall', pitch: -20, angle: 'opposite', hint: 'WALK TO OPPOSITE WALL', distance: 5 },
-            { type: 'behind_furniture', pitch: 30, angle: 'behind', hint: 'GO BEHIND FURNITURE/OBJECTS', distance: 4 },
-            { type: 'different_room', pitch: 0, angle: 'random', hint: 'MOVE TO DIFFERENT ROOM/AREA', distance: 6 },
-            { type: 'under_table', pitch: 60, angle: 'random', hint: 'CROUCH UNDER TABLE/DESK', distance: 2 },
-            { type: 'high_shelf', pitch: -60, angle: 'random', hint: 'FIND HIGH SHELF/CABINET', distance: 3 },
-            { type: 'doorway', pitch: 10, angle: 'perpendicular', hint: 'STAND IN DOORWAY/ENTRANCE', distance: 4 }
+            { type: 'ceiling', pitch: -45, angle: 'random', hint: 'LOOK UP', distance: 2 },
+            { type: 'floor', pitch: 45, angle: 'random', hint: 'LOOK DOWN', distance: 2 },
+            { type: 'left', pitch: 0, angle: 'left', hint: 'TURN LEFT', distance: 2 },
+            { type: 'right', pitch: 0, angle: 'right', hint: 'TURN RIGHT', distance: 2 },
+            { type: 'behind', pitch: 0, angle: 'behind', hint: 'TURN AROUND', distance: 2 },
+            { type: 'up_left', pitch: -30, angle: 'left', hint: 'LOOK UP LEFT', distance: 2 },
+            { type: 'up_right', pitch: -30, angle: 'right', hint: 'LOOK UP RIGHT', distance: 2 },
+            { type: 'down_left', pitch: 30, angle: 'left', hint: 'LOOK DOWN LEFT', distance: 2 }
         ];
         
         const position = positions[Math.floor(Math.random() * positions.length)];
@@ -547,8 +538,11 @@ class AIHunterGame {
             case 'behind':
                 this.aiAngle = this.heading + 150 + Math.random() * 60;
                 break;
-            case 'perpendicular':
-                this.aiAngle = this.heading + (Math.random() > 0.5 ? 90 : -90) + (Math.random() - 0.5) * 30;
+            case 'left':
+                this.aiAngle = this.heading - 90 + (Math.random() - 0.5) * 30;
+                break;
+            case 'right':
+                this.aiAngle = this.heading + 90 + (Math.random() - 0.5) * 30;
                 break;
         }
         
@@ -567,25 +561,12 @@ class AIHunterGame {
         
         this.showSpawnNotification(position.hint);
         this.updateTargetIndicator();
-        
-        this.aiDespawnTimer = setTimeout(() => {
-            if (this.currentAI) {
-                this.despawnAI();
-            }
-        }, 25000);
     }
 
     captureAI() {
         if (!this.aiInFrame || !this.currentAI) return;
         
-        // Check if player moved enough from last capture
-        if (this.lastCapturePosition) {
-            const distance = this.calculateDistance(this.playerPosition, this.lastCapturePosition);
-            if (distance < this.minMovementDistance) {
-                this.showMovementWarning();
-                return;
-            }
-        }
+        // Removed movement distance check for easier gameplay
         
         const captured = this.currentAI;
         captured.caught = true;
@@ -593,10 +574,7 @@ class AIHunterGame {
         // Update last capture position
         this.lastCapturePosition = { ...this.playerPosition };
         
-        if (this.aiDespawnTimer) {
-            clearTimeout(this.aiDespawnTimer);
-            this.aiDespawnTimer = null;
-        }
+        // Removed despawn timer
         
         document.getElementById('captured-icon').textContent = captured.icon;
         document.getElementById('capture-message').textContent = 
@@ -612,6 +590,12 @@ class AIHunterGame {
         this.updateProgress();
         this.updateInventory();
         this.showModal('success-modal');
+        
+        // Spawn next AI immediately after capture
+        setTimeout(() => {
+            this.hideModal('success-modal');
+            this.spawnNextAI();
+        }, 2000);
     }
 
     gameComplete() {
@@ -699,24 +683,7 @@ class AIHunterGame {
         if (hint) hint.remove();
     }
     
-    showSpawnCountdown(delay) {
-        const countdown = document.getElementById('spawn-countdown');
-        if (!countdown) return;
-        
-        let remaining = Math.ceil(delay / 1000);
-        countdown.textContent = `NEXT TARGET: ${remaining}s`;
-        countdown.style.display = 'block';
-        
-        const timer = setInterval(() => {
-            remaining--;
-            if (remaining <= 0) {
-                clearInterval(timer);
-                countdown.style.display = 'none';
-            } else {
-                countdown.textContent = `NEXT TARGET: ${remaining}s`;
-            }
-        }, 1000);
-    }
+
     
     showSpawnNotification(hint = 'NEW TARGET DETECTED!') {
         const notification = document.createElement('div');
@@ -750,56 +717,9 @@ class AIHunterGame {
         return Math.sqrt(dx*dx + dy*dy + dz*dz);
     }
     
-    showMovementWarning() {
-        const warning = document.createElement('div');
-        warning.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 0, 0, 0.9);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            letter-spacing: 2px;
-            z-index: 1000;
-            text-align: center;
-        `;
-        warning.innerHTML = '⚠️ MOVE TO A DIFFERENT LOCATION<br><small>You must physically move 3+ meters</small>';
-        document.body.appendChild(warning);
-        
-        setTimeout(() => warning.remove(), 3000);
-    }
+
     
-    despawnAI() {
-        if (this.currentAI) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(255, 165, 0, 0.9);
-                color: white;
-                padding: 12px 24px;
-                border-radius: 8px;
-                font-family: 'Orbitron', sans-serif;
-                font-size: 12px;
-                letter-spacing: 2px;
-                z-index: 1000;
-            `;
-            notification.textContent = 'TARGET ESCAPED!';
-            document.body.appendChild(notification);
-            
-            setTimeout(() => notification.remove(), 3000);
-            
-            this.currentAI = null;
-            this.aiScreenPos = null;
-            this.scheduleNextSpawn();
-        }
-    }
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
