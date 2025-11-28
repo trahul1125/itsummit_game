@@ -7,21 +7,21 @@ class AIHunterGame {
         this.userStats = { totalCaptured: 0, totalModels: 15 };
         
         this.aiModels = [
-            { name: 'GPT-4', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637099.png', caught: false, rarity: 'legendary', info: { en: 'GPT-4 is OpenAI\'s most advanced language model, capable of understanding and generating human-like text with remarkable accuracy and creativity.', ja: 'GPT-4はOpenAIの最も高度な言語モデルで、驚くべき精度と創造性で人間のようなテキストを理解し生成することができます。' } },
-            { name: 'Claude', icon: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png', caught: false, rarity: 'legendary', info: { en: 'Claude is Anthropic\'s AI assistant focused on being helpful, harmless, and honest through constitutional AI training methods.', ja: 'ClaudeはAnthropicのAIアシスタントで、憲法的AI訓練方法により、有用で無害で正直であることに焦点を当てています。' } },
-            { name: 'Gemini', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637108.png', caught: false, rarity: 'epic', info: { en: 'Gemini is Google\'s multimodal AI model that can understand and process text, images, audio, and video simultaneously.', ja: 'GeminiはGoogleのマルチモーダルAIモデルで、テキスト、画像、音声、動画を同時に理解し処理することができます。' } },
-            { name: 'LLaMA', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637102.png', caught: false, rarity: 'epic', info: { en: 'LLaMA (Large Language Model Meta AI) is Meta\'s foundation language model designed for research and commercial applications.', ja: 'LLaMA（Large Language Model Meta AI）は、研究および商用アプリケーション向けに設計されたMetaの基盤言語モデルです。' } },
-            { name: 'PaLM', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637103.png', caught: false, rarity: 'rare', info: { en: 'PaLM (Pathways Language Model) is Google\'s 540-billion parameter transformer model with breakthrough reasoning capabilities.', ja: 'PaLM（Pathways Language Model）は、画期的な推論能力を持つGoogleの5400億パラメータのトランスフォーマーモデルです。' } },
-            { name: 'BERT', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637104.png', caught: false, rarity: 'common', info: { en: 'BERT revolutionized NLP by introducing bidirectional training, allowing better understanding of context in language processing.', ja: 'BERTは双方向訓練を導入してNLPに革命をもたらし、言語処理における文脈のより良い理解を可能にしました。' } },
-            { name: 'T5', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637105.png', caught: false, rarity: 'common', info: { en: 'T5 (Text-to-Text Transfer Transformer) treats every NLP problem as a text generation task, unifying various language tasks.', ja: 'T5（Text-to-Text Transfer Transformer）は、すべてのNLP問題をテキスト生成タスクとして扱い、様々な言語タスクを統合します。' } },
-            { name: 'GPT-3', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637106.png', caught: false, rarity: 'rare', info: { en: 'GPT-3 was a breakthrough 175-billion parameter model that demonstrated emergent abilities in language understanding and generation.', ja: 'GPT-3は1750億パラメータの画期的なモデルで、言語理解と生成において創発的能力を実証しました。' } },
-            { name: 'Mistral', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637107.png', caught: false, rarity: 'epic', info: { en: 'Mistral AI creates efficient, high-performance language models focused on practical applications and deployment flexibility.', ja: 'Mistral AIは、実用的なアプリケーションと展開の柔軟性に焦点を当てた効率的で高性能な言語モデルを作成します。' } },
-            { name: 'Falcon', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637110.png', caught: false, rarity: 'rare', info: { en: 'Falcon is a family of open-source large language models trained on refined web data for superior performance.', ja: 'Falconは、優れた性能のために洗練されたWebデータで訓練されたオープンソース大規模言語モデルのファミリーです。' } },
-            { name: 'Rufus', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637111.png', caught: false, rarity: 'epic', info: { en: 'Rufus is Amazon\'s generative AI-powered shopping assistant that helps users find, compare, and purchase products through natural conversations.', ja: 'RufusはAmazonの生成AI搭載ショッピングアシスタントで、自然な会話を通じてユーザーが商品を見つけ、比較し、購入するのを支援します。' } },
-            { name: 'Copilot', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637112.png', caught: false, rarity: 'rare', info: { en: 'GitHub Copilot is an AI pair programmer that suggests code and entire functions in real-time, powered by OpenAI Codex.', ja: 'GitHub CopilotはOpenAI Codexを搭載したAIペアプログラマーで、リアルタイムでコードや関数全体を提案します。' } },
-            { name: 'Bard', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637113.png', caught: false, rarity: 'epic', info: { en: 'Bard was Google\'s conversational AI service designed to provide helpful, accurate, and up-to-date information through natural dialogue.', ja: 'BardはGoogleの会話型AIサービスで、自然な対話を通じて有用で正確かつ最新の情報を提供するように設計されていました。' } },
-            { name: 'ChatGPT', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637114.png', caught: false, rarity: 'legendary', info: { en: 'ChatGPT is OpenAI\'s conversational AI that can engage in human-like dialogue, answer questions, and assist with various tasks.', ja: 'ChatGPTはOpenAIの会話型AIで、人間のような対話を行い、質問に答え、様々なタスクを支援することができます。' } },
-            { name: 'Alexa', icon: 'https://cdn-icons-png.flaticon.com/512/8637/8637115.png', caught: false, rarity: 'common', info: { en: 'Alexa is Amazon\'s cloud-based voice service that powers Echo devices and enables voice interaction with smart home devices.', ja: 'AlexaはAmazonのクラウドベース音声サービスで、Echoデバイスを動かし、スマートホームデバイスとの音声インタラクションを可能にします。' } }
+            { name: 'GPT-4', emoji: '🤖', caught: false, rarity: 'legendary', info: { en: 'GPT-4 is OpenAI\'s most advanced language model, capable of understanding and generating human-like text with remarkable accuracy and creativity.', ja: 'GPT-4はOpenAIの最も高度な言語モデルで、驚くべき精度と創造性で人間のようなテキストを理解し生成することができます。' } },
+            { name: 'Claude', emoji: '🧠', caught: false, rarity: 'legendary', info: { en: 'Claude is Anthropic\'s AI assistant focused on being helpful, harmless, and honest through constitutional AI training methods.', ja: 'ClaudeはAnthropicのAIアシスタントで、憲法的AI訓練方法により、有用で無害で正直であることに焦点を当てています。' } },
+            { name: 'Gemini', emoji: '💎', caught: false, rarity: 'epic', info: { en: 'Gemini is Google\'s multimodal AI model that can understand and process text, images, audio, and video simultaneously.', ja: 'GeminiはGoogleのマルチモーダルAIモデルで、テキスト、画像、音声、動画を同時に理解し処理することができます。' } },
+            { name: 'LLaMA', emoji: '🦙', caught: false, rarity: 'epic', info: { en: 'LLaMA (Large Language Model Meta AI) is Meta\'s foundation language model designed for research and commercial applications.', ja: 'LLaMA（Large Language Model Meta AI）は、研究および商用アプリケーション向けに設計されたMetaの基盤言語モデルです。' } },
+            { name: 'PaLM', emoji: '🌴', caught: false, rarity: 'rare', info: { en: 'PaLM (Pathways Language Model) is Google\'s 540-billion parameter transformer model with breakthrough reasoning capabilities.', ja: 'PaLM（Pathways Language Model）は、画期的な推論能力を持つGoogleの5400億パラメータのトランスフォーマーモデルです。' } },
+            { name: 'BERT', emoji: '📚', caught: false, rarity: 'common', info: { en: 'BERT revolutionized NLP by introducing bidirectional training, allowing better understanding of context in language processing.', ja: 'BERTは双方向訓練を導入してNLPに革命をもたらし、言語処理における文脈のより良い理解を可能にしました。' } },
+            { name: 'T5', emoji: '🔄', caught: false, rarity: 'common', info: { en: 'T5 (Text-to-Text Transfer Transformer) treats every NLP problem as a text generation task, unifying various language tasks.', ja: 'T5（Text-to-Text Transfer Transformer）は、すべてのNLP問題をテキスト生成タスクとして扱い、様々な言語タスクを統合します。' } },
+            { name: 'GPT-3', emoji: '⚡', caught: false, rarity: 'rare', info: { en: 'GPT-3 was a breakthrough 175-billion parameter model that demonstrated emergent abilities in language understanding and generation.', ja: 'GPT-3は1750億パラメータの画期的なモデルで、言語理解と生成において創発的能力を実証しました。' } },
+            { name: 'Mistral', emoji: '🌪️', caught: false, rarity: 'epic', info: { en: 'Mistral AI creates efficient, high-performance language models focused on practical applications and deployment flexibility.', ja: 'Mistral AIは、実用的なアプリケーションと展開の柔軟性に焦点を当てた効率的で高性能な言語モデルを作成します。' } },
+            { name: 'Falcon', emoji: '🦅', caught: false, rarity: 'rare', info: { en: 'Falcon is a family of open-source large language models trained on refined web data for superior performance.', ja: 'Falconは、優れた性能のために洗練されたWebデータで訓練されたオープンソース大規模言語モデルのファミリーです。' } },
+            { name: 'Rufus', emoji: '🛍️', caught: false, rarity: 'epic', info: { en: 'Rufus is Amazon\'s generative AI-powered shopping assistant that helps users find, compare, and purchase products through natural conversations.', ja: 'RufusはAmazonの生成AI搭載ショッピングアシスタントで、自然な会話を通じてユーザーが商品を見つけ、比較し、購入するのを支援します。' } },
+            { name: 'Copilot', emoji: '💻', caught: false, rarity: 'rare', info: { en: 'GitHub Copilot is an AI pair programmer that suggests code and entire functions in real-time, powered by OpenAI Codex.', ja: 'GitHub CopilotはOpenAI Codexを搭載したAIペアプログラマーで、リアルタイムでコードや関数全体を提案します。' } },
+            { name: 'Bard', emoji: '🎭', caught: false, rarity: 'epic', info: { en: 'Bard was Google\'s conversational AI service designed to provide helpful, accurate, and up-to-date information through natural dialogue.', ja: 'BardはGoogleの会話型AIサービスで、自然な対話を通じて有用で正確かつ最新の情報を提供するように設計されていました。' } },
+            { name: 'ChatGPT', emoji: '💬', caught: false, rarity: 'legendary', info: { en: 'ChatGPT is OpenAI\'s conversational AI that can engage in human-like dialogue, answer questions, and assist with various tasks.', ja: 'ChatGPTはOpenAIの会話型AIで、人間のような対話を行い、質問に答え、様々なタスクを支援することができます。' } },
+            { name: 'Alexa', emoji: '🔊', caught: false, rarity: 'common', info: { en: 'Alexa is Amazon\'s cloud-based voice service that powers Echo devices and enables voice interaction with smart home devices.', ja: 'AlexaはAmazonのクラウドベース音声サービスで、Echoデバイスを動かし、スマートホームデバイスとの音声インタラクションを可能にします。' } }
         ];
         
         this.currentAI = null;
@@ -458,36 +458,18 @@ class AIHunterGame {
         this.ctx.arc(x, floatY, size * 0.6, 0, Math.PI * 2);
         this.ctx.fill();
         
-        // Draw actual icon image
+        // Draw emoji directly - no image loading
         this.ctx.shadowBlur = 0;
-        
-        // Create and load image
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        // Store context for async loading
-        const drawImage = () => {
-            this.ctx.save();
-            this.ctx.drawImage(img, x - size * 0.3, floatY - size * 0.3, size * 0.6, size * 0.6);
-            this.ctx.restore();
+        const emojiMap = {
+            'GPT-4': '🤖', 'Claude': '🧠', 'Gemini': '💎', 'LLaMA': '🦙', 'PaLM': '🌴',
+            'BERT': '📚', 'T5': '🔄', 'GPT-3': '⚡', 'Mistral': '🌪️', 'Falcon': '🦅',
+            'Rufus': '🛍️', 'Copilot': '💻', 'Bard': '🎭', 'ChatGPT': '💬', 'Alexa': '🔊'
         };
-        
-        img.onload = drawImage;
-        img.onerror = () => {
-            // Fallback to emoji if image fails
-            const emojiMap = {
-                'GPT-4': '🤖', 'Claude': '🧠', 'Gemini': '💎', 'LLaMA': '🦙', 'PaLM': '🌴',
-                'BERT': '📚', 'T5': '🔄', 'GPT-3': '⚡', 'Mistral': '🌪️', 'Falcon': '🦅',
-                'Rufus': '🛍️', 'Copilot': '💻', 'Bard': '🎭', 'ChatGPT': '💬', 'Alexa': '🔊'
-            };
-            this.ctx.font = `${size * 0.5}px Arial`;
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillStyle = '#000';
-            this.ctx.fillText(emojiMap[this.currentAI.name] || '🤖', x, floatY);
-        };
-        
-        img.src = this.currentAI.icon;
+        this.ctx.font = `${size * 0.5}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillText(this.currentAI.emoji || '🤖', x, floatY);
         
         // Draw name
         this.ctx.font = 'bold 14px Orbitron, sans-serif';
@@ -586,7 +568,7 @@ class AIHunterGame {
             'BERT': '📚', 'T5': '🔄', 'GPT-3': '⚡', 'Mistral': '🌪️', 'Falcon': '🦅',
             'Rufus': '🛍️', 'Copilot': '💻', 'Bard': '🎭', 'ChatGPT': '💬', 'Alexa': '🔊'
         };
-        capturedImg.innerHTML = `<img src="${captured.icon}" style="width: 60px; height: 60px; object-fit: contain;" onerror="this.innerHTML='${emojiMap[captured.name] || '🤖'}'">`;
+        capturedImg.innerHTML = `<div style="font-size: 60px;">${captured.emoji || '🤖'}</div>`;
         
         document.getElementById('capture-message').textContent = 
             this.language === 'ja' ? `${captured.name}をコレクションに追加しました！` : `${captured.name} has been added to your collection!`;
@@ -636,7 +618,7 @@ class AIHunterGame {
                 'Rufus': '🛍️', 'Copilot': '💻', 'Bard': '🎭', 'ChatGPT': '💬', 'Alexa': '🔊'
             };
             item.innerHTML = `
-                <div class="icon"><img src="${ai.icon}" style="width: 48px; height: 48px; object-fit: contain;" onerror="this.innerHTML='${emojiMap[ai.name] || '🤖'}'"></div>
+                <div class="icon" style="font-size: 48px;">${ai.emoji || '🤖'}</div>
                 <div class="name">${ai.caught ? ai.name : '???'}</div>
             `;
             grid.appendChild(item);
@@ -842,7 +824,7 @@ class AIHunterGame {
                 color: white;
                 font-family: 'Orbitron', sans-serif;
             ">
-                <img src="${lastCaptured.icon}" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 20px;" onerror="this.innerHTML='${this.getEmojiForAI(lastCaptured.name)}'">
+                <div style="font-size: 80px; margin-bottom: 20px;">${lastCaptured.emoji || '🤖'}</div>>
                 <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 1.5rem;">${lastCaptured.name}</h3>
                 <p style="line-height: 1.6; font-size: 14px; color: rgba(255,255,255,0.8);">${lastCaptured.info[this.language]}</p>
             </div>
