@@ -99,6 +99,14 @@ class AIHunterGame {
             this.hideModal('complete-modal');
             this.showInventory();
         });
+
+        document.getElementById('scoreboard-btn').addEventListener('click', () => {
+            this.showScoreboard();
+        });
+
+        document.getElementById('back-from-scoreboard').addEventListener('click', () => {
+            this.showPage('landing-page');
+        });
     }
 
     async startGame() {
@@ -587,6 +595,8 @@ class AIHunterGame {
     }
 
     gameComplete() {
+        const gameTime = Date.now() - this.gameStartTime;
+        this.saveScore(gameTime, this.userStats.totalCaptured);
         document.getElementById('complete-message').textContent = 
             `Congratulations ${this.user.name}! You've captured all ${this.aiModels.length} AI models!`;
         this.showModal('complete-modal');
@@ -920,6 +930,9 @@ class AIHunterGame {
     }
     
     gameTimeUp() {
+        const gameTime = this.gameTimeLimit;
+        this.saveScore(gameTime, this.userStats.totalCaptured);
+        
         const timeUpModal = document.createElement('div');
         timeUpModal.style.cssText = `
             position: fixed;
@@ -966,6 +979,71 @@ class AIHunterGame {
             'Rufus': '🛍️', 'Copilot': '💻', 'Bard': '🎭', 'ChatGPT': '💬', 'Alexa': '🔊'
         };
         return emojiMap[name] || '🤖';
+    }
+    
+    saveScore(gameTime, captured) {
+        const score = {
+            name: this.user.name,
+            organization: this.user.organization,
+            captured: captured,
+            totalModels: this.aiModels.length,
+            gameTime: gameTime,
+            completionRate: (captured / this.aiModels.length) * 100,
+            timestamp: Date.now(),
+            date: new Date().toLocaleDateString()
+        };
+        
+        let scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
+        scores.push(score);
+        scores.sort((a, b) => {
+            if (b.captured !== a.captured) return b.captured - a.captured;
+            return a.gameTime - b.gameTime;
+        });
+        localStorage.setItem('aiHunterScores', JSON.stringify(scores));
+    }
+    
+    showScoreboard() {
+        const scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
+        this.showPage('scoreboard-page');
+        this.updateScoreboardDisplay(scores);
+    }
+    
+    updateScoreboardDisplay(scores) {
+        const grid = document.getElementById('scoreboard-grid');
+        grid.innerHTML = '';
+        
+        if (scores.length === 0) {
+            grid.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 40px;">No scores yet!</div>';
+            return;
+        }
+        
+        scores.slice(0, 20).forEach((score, index) => {
+            const item = document.createElement('div');
+            item.className = 'scoreboard-item';
+            
+            const rankEmoji = index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+            const timeText = score.gameTime >= this.gameTimeLimit ? 'TIME UP' : this.formatTime(score.gameTime);
+            
+            item.innerHTML = `
+                <div class="rank">${rankEmoji}</div>
+                <div class="player-info">
+                    <div class="name">${score.name}</div>
+                    <div class="org">${score.organization}</div>
+                </div>
+                <div class="score-info">
+                    <div class="captured">${score.captured}/${score.totalModels}</div>
+                    <div class="time">${timeText}</div>
+                    <div class="date">${score.date}</div>
+                </div>
+            `;
+            grid.appendChild(item);
+        });
+    }
+    
+    formatTime(ms) {
+        const minutes = Math.floor(ms / 60000);
+        const seconds = Math.floor((ms % 60000) / 1000);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
     
     calculateDistance(pos1, pos2) {
