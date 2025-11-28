@@ -1,17 +1,27 @@
 class AIHunterGame {
     constructor() {
         this.user = { name: '', organization: '' };
+        this.language = 'en';
+        this.gameStartTime = null;
+        this.gameTimeLimit = 600000; // 10 minutes
+        this.userStats = { totalCaptured: 0, totalModels: 15 };
+        
         this.aiModels = [
-            { name: 'GPT-4', icon: '🤖', caught: false, rarity: 'legendary' },
-            { name: 'Claude', icon: '🧠', caught: false, rarity: 'legendary' },
-            { name: 'Gemini', icon: '💎', caught: false, rarity: 'epic' },
-            { name: 'LLaMA', icon: '🦙', caught: false, rarity: 'epic' },
-            { name: 'PaLM', icon: '🌴', caught: false, rarity: 'rare' },
-            { name: 'BERT', icon: '📚', caught: false, rarity: 'common' },
-            { name: 'T5', icon: '🔄', caught: false, rarity: 'common' },
-            { name: 'GPT-3', icon: '⚡', caught: false, rarity: 'rare' },
-            { name: 'Mistral', icon: '🌪️', caught: false, rarity: 'epic' },
-            { name: 'Falcons', icon: '🦅', caught: false, rarity: 'rare' }
+            { name: 'GPT-4', icon: 'https://cdn-icons-png.flaticon.com/512/8943/8943377.png', caught: false, rarity: 'legendary', info: 'GPT-4 is OpenAI\'s most advanced language model, capable of understanding and generating human-like text with remarkable accuracy and creativity.' },
+            { name: 'Claude', icon: 'https://cdn-icons-png.flaticon.com/512/4712/4712027.png', caught: false, rarity: 'legendary', info: 'Claude is Anthropic\'s AI assistant focused on being helpful, harmless, and honest through constitutional AI training methods.' },
+            { name: 'Gemini', icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965879.png', caught: false, rarity: 'epic', info: 'Gemini is Google\'s multimodal AI model that can understand and process text, images, audio, and video simultaneously.' },
+            { name: 'LLaMA', icon: 'https://cdn-icons-png.flaticon.com/512/616/616408.png', caught: false, rarity: 'epic', info: 'LLaMA (Large Language Model Meta AI) is Meta\'s foundation language model designed for research and commercial applications.' },
+            { name: 'PaLM', icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965879.png', caught: false, rarity: 'rare', info: 'PaLM (Pathways Language Model) is Google\'s 540-billion parameter transformer model with breakthrough reasoning capabilities.' },
+            { name: 'BERT', icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965879.png', caught: false, rarity: 'common', info: 'BERT revolutionized NLP by introducing bidirectional training, allowing better understanding of context in language processing.' },
+            { name: 'T5', icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965879.png', caught: false, rarity: 'common', info: 'T5 (Text-to-Text Transfer Transformer) treats every NLP problem as a text generation task, unifying various language tasks.' },
+            { name: 'GPT-3', icon: 'https://cdn-icons-png.flaticon.com/512/8943/8943377.png', caught: false, rarity: 'rare', info: 'GPT-3 was a breakthrough 175-billion parameter model that demonstrated emergent abilities in language understanding and generation.' },
+            { name: 'Mistral', icon: 'https://cdn-icons-png.flaticon.com/512/4712/4712027.png', caught: false, rarity: 'epic', info: 'Mistral AI creates efficient, high-performance language models focused on practical applications and deployment flexibility.' },
+            { name: 'Falcon', icon: 'https://cdn-icons-png.flaticon.com/512/616/616408.png', caught: false, rarity: 'rare', info: 'Falcon is a family of open-source large language models trained on refined web data for superior performance.' },
+            { name: 'Rufus', icon: 'https://cdn-icons-png.flaticon.com/512/732/732190.png', caught: false, rarity: 'epic', info: 'Rufus is Amazon\'s generative AI-powered shopping assistant that helps users find, compare, and purchase products through natural conversations.' },
+            { name: 'Copilot', icon: 'https://cdn-icons-png.flaticon.com/512/5968/5968866.png', caught: false, rarity: 'rare', info: 'GitHub Copilot is an AI pair programmer that suggests code and entire functions in real-time, powered by OpenAI Codex.' },
+            { name: 'Bard', icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965879.png', caught: false, rarity: 'epic', info: 'Bard was Google\'s conversational AI service designed to provide helpful, accurate, and up-to-date information through natural dialogue.' },
+            { name: 'ChatGPT', icon: 'https://cdn-icons-png.flaticon.com/512/8943/8943377.png', caught: false, rarity: 'legendary', info: 'ChatGPT is OpenAI\'s conversational AI that can engage in human-like dialogue, answer questions, and assist with various tasks.' },
+            { name: 'Alexa', icon: 'https://cdn-icons-png.flaticon.com/512/732/732190.png', caught: false, rarity: 'common', info: 'Alexa is Amazon\'s cloud-based voice service that powers Echo devices and enables voice interaction with smart home devices.' }
         ];
         
         this.currentAI = null;
@@ -53,9 +63,16 @@ class AIHunterGame {
         this.setupEventListeners();
         this.updateInventory();
         this.updateProgress();
+        this.updateUserStats();
+        this.updateLanguage();
     }
 
     setupEventListeners() {
+        document.getElementById('language-select').addEventListener('change', (e) => {
+            this.language = e.target.value;
+            this.updateLanguage();
+        });
+        
         document.getElementById('user-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.startGame();
@@ -75,7 +92,7 @@ class AIHunterGame {
 
         document.getElementById('continue-btn').addEventListener('click', () => {
             this.hideModal('success-modal');
-            this.startMovementPhase();
+            this.showAIInfo();
         });
 
         document.getElementById('view-collection-btn').addEventListener('click', () => {
@@ -87,6 +104,8 @@ class AIHunterGame {
     async startGame() {
         this.user.name = document.getElementById('name').value;
         this.user.organization = document.getElementById('organization').value;
+        this.gameStartTime = Date.now();
+        this.userStats.totalModels = this.aiModels.length;
 
         try {
             this.cameraStream = await navigator.mediaDevices.getUserMedia({ 
@@ -232,6 +251,84 @@ class AIHunterGame {
                         this.updateDistanceCounter();
                         
                         if (this.distanceTraveled >= this.minMovementDistance) {
+                            this.spawnNextAI();
+                        }
+                    }
+                    
+                    lastTime = currentTime;
+                }
+            });
+        }
+    }
+
+    fallbackToTouch() {
+        console.log('Motion tracking required - no touch fallback');
+        
+        const message = document.createElement('div');
+        message.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 1000;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+        `;
+        message.innerHTML = 'DEVICE MOTION REQUIRED<br><small>Please enable motion permissions</small>';
+        document.body.appendChild(message);
+    }
+
+    startGameLoop() {
+        const loop = () => {
+            this.update();
+            this.render();
+            this.animationId = requestAnimationFrame(loop);
+        };
+        loop();
+    }
+
+    update() {
+        if (this.currentAI) {
+            let angleDiff = this.aiAngle - this.heading;
+            while (angleDiff > 180) angleDiff -= 360;
+            while (angleDiff < -180) angleDiff += 360;
+            
+            const pitchDiff = this.aiPitch - this.pitch;
+            
+            const fovH = 60;
+            const fovV = 45;
+            
+            this.aiVisible = Math.abs(angleDiff) < fovH && Math.abs(pitchDiff) < fovV;
+            
+            if (this.aiVisible) {
+                const screenX = this.frameCenter.x + (angleDiff / fovH) * this.canvas.width * 0.4;
+                const screenY = this.frameCenter.y - (pitchDiff / fovV) * this.canvas.height * 0.4;
+                
+                this.aiScreenPos = { x: screenX, y: screenY };
+                
+                const dx = screenX - this.frameCenter.x;
+                const dy = screenY - this.frameCenter.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                this.aiInFrame = distance < this.frameRadius;
+            } else {
+                this.aiInFrame = false;
+            }
+            
+            this.updateRadar(angleDiff);
+            this.updateCaptureButton();
+            this.updateTargetIndicator();
+        }
+        
+        // Check game time limit
+        if (this.gameStartTime && Date.now() - this.gameStartTime > this.gameTimeLimit) {
+            this.gameTimeUp();
+        }
+    }s.minMovementDistance) {
                             this.spawnNextAI();
                         }
                     }
@@ -421,11 +518,11 @@ class AIHunterGame {
         const time = Date.now() / 1000;
         const floatY = y + Math.sin(time * 2) * 10;
         const scale = 1 + Math.sin(time * 3) * 0.05;
-        
         const size = 80 * scale;
         
         this.ctx.save();
         
+        // Draw glow effect
         const gradient = this.ctx.createRadialGradient(x, floatY, 0, x, floatY, size * 1.5);
         gradient.addColorStop(0, 'rgba(0, 240, 255, 0.3)');
         gradient.addColorStop(0.5, 'rgba(124, 58, 237, 0.2)');
@@ -436,24 +533,27 @@ class AIHunterGame {
         this.ctx.arc(x, floatY, size * 1.5, 0, Math.PI * 2);
         this.ctx.fill();
         
-        const innerGlow = this.ctx.createRadialGradient(x, floatY, size * 0.3, x, floatY, size);
-        innerGlow.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-        innerGlow.addColorStop(0.7, 'rgba(255, 255, 255, 0.85)');
-        innerGlow.addColorStop(1, 'rgba(200, 200, 255, 0.7)');
+        // Draw image instead of emoji
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            this.ctx.save();
+            this.ctx.shadowColor = this.aiInFrame ? '#10b981' : '#00f0ff';
+            this.ctx.shadowBlur = this.aiInFrame ? 30 : 20;
+            this.ctx.drawImage(img, x - size/2, floatY - size/2, size, size);
+            this.ctx.restore();
+        };
+        img.onerror = () => {
+            // Fallback to text if image fails
+            this.ctx.font = `${size * 0.7}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText('🤖', x, floatY);
+        };
+        img.src = this.currentAI.icon;
         
-        this.ctx.fillStyle = innerGlow;
-        this.ctx.shadowColor = this.aiInFrame ? '#10b981' : '#00f0ff';
-        this.ctx.shadowBlur = this.aiInFrame ? 50 : 30;
-        this.ctx.beginPath();
-        this.ctx.arc(x, floatY, size * 0.6, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        this.ctx.shadowBlur = 0;
-        this.ctx.font = `${size * 0.7}px Arial`;
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(this.currentAI.icon, x, floatY);
-        
+        // Draw name
         this.ctx.font = 'bold 14px Orbitron, sans-serif';
         this.ctx.fillStyle = 'white';
         this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
@@ -551,10 +651,14 @@ class AIHunterGame {
         
         const captured = this.currentAI;
         captured.caught = true;
+        this.userStats.totalCaptured++;
         
-        document.getElementById('captured-icon').textContent = captured.icon;
+        // Use image instead of emoji
+        const capturedImg = document.getElementById('captured-icon');
+        capturedImg.innerHTML = `<img src="${captured.icon}" style="width: 60px; height: 60px; object-fit: contain;" onerror="this.innerHTML='🤖'">`;
+        
         document.getElementById('capture-message').textContent = 
-            `${captured.name} has been added to your collection!`;
+            this.language === 'ja' ? `${captured.name}をコレクションに追加しました！` : `${captured.name} has been added to your collection!`;
         
         if (navigator.vibrate) {
             navigator.vibrate([100, 50, 100]);
@@ -565,9 +669,8 @@ class AIHunterGame {
         
         this.updateProgress();
         this.updateInventory();
+        this.updateUserStats();
         this.showModal('success-modal');
-        
-        // Don't auto-spawn - wait for continue button
     }
 
     gameComplete() {
@@ -761,6 +864,137 @@ class AIHunterGame {
         if (counter) counter.remove();
     }
     
+    showAIInfo() {
+        const lastCaptured = this.aiModels.find(ai => ai.caught && ai === this.aiModels.filter(a => a.caught).pop());
+        if (!lastCaptured) {
+            this.startMovementPhase();
+            return;
+        }
+        
+        const infoModal = document.createElement('div');
+        infoModal.id = 'ai-info-modal';
+        infoModal.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        `;
+        
+        infoModal.innerHTML = `
+            <div style="
+                background: linear-gradient(135deg, #1a1a2e, #16213e);
+                border: 2px solid var(--primary);
+                border-radius: 16px;
+                padding: 30px;
+                text-align: center;
+                max-width: 400px;
+                color: white;
+                font-family: 'Orbitron', sans-serif;
+            ">
+                <img src="${lastCaptured.icon}" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 20px;" onerror="this.innerHTML='🤖'">
+                <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 1.5rem;">${lastCaptured.name}</h3>
+                <p style="line-height: 1.6; font-size: 14px; color: rgba(255,255,255,0.8);">${this.language === 'ja' ? this.translateToJapanese(lastCaptured.info) : lastCaptured.info}</p>
+            </div>
+        `;
+        
+        document.body.appendChild(infoModal);
+        
+        setTimeout(() => {
+            infoModal.remove();
+            this.startMovementPhase();
+        }, 10000);
+    }
+    
+    translateToJapanese(text) {
+        // Simple translation mapping for demo
+        const translations = {
+            'GPT-4 is OpenAI\'s most advanced language model': 'GPT-4はOpenAIの最も高度な言語モデルです',
+            'Claude is Anthropic\'s AI assistant': 'ClaudeはAnthropicのAIアシスタントです',
+            'Rufus is Amazon\'s generative AI-powered shopping assistant': 'RufusはAmazonの生成AIショッピングアシスタントです'
+        };
+        return translations[text.substring(0, 50)] || text;
+    }
+    
+    updateLanguage() {
+        const texts = {
+            en: {
+                title: 'AI HUNTER',
+                tagline: 'Locate. Target. Capture.',
+                nameLabel: 'HUNTER ID',
+                orgLabel: 'ORGANIZATION',
+                startBtn: 'INITIALIZE',
+                infoText: 'Please enter correct name and organization'
+            },
+            ja: {
+                title: 'AI ハンター',
+                tagline: '発見。狙い。捕獲。',
+                nameLabel: 'ハンターID',
+                orgLabel: '組織',
+                startBtn: '開始',
+                infoText: '正しい名前と組織を入力してください'
+            }
+        };
+        
+        const t = texts[this.language];
+        document.querySelector('#landing-page h1').textContent = t.title;
+        document.querySelector('.tagline').textContent = t.tagline;
+        document.querySelector('label[for="name"]').textContent = t.nameLabel;
+        document.querySelector('label[for="organization"]').textContent = t.orgLabel;
+        document.querySelector('.start-btn span').textContent = t.startBtn;
+        document.getElementById('login-info').textContent = t.infoText;
+    }
+    
+    updateUserStats() {
+        const statsElement = document.getElementById('user-stats');
+        if (statsElement) {
+            statsElement.textContent = `${this.userStats.totalCaptured}/${this.userStats.totalModels}`;
+        }
+    }
+    
+    gameTimeUp() {
+        const timeUpModal = document.createElement('div');
+        timeUpModal.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        `;
+        
+        timeUpModal.innerHTML = `
+            <div style="
+                background: linear-gradient(135deg, #1a1a2e, #16213e);
+                border: 2px solid #ff3366;
+                border-radius: 16px;
+                padding: 40px;
+                text-align: center;
+                color: white;
+                font-family: 'Orbitron', sans-serif;
+            ">
+                <h2 style="color: #ff3366; margin-bottom: 20px;">${this.language === 'ja' ? '時間終了！' : 'TIME UP!'}</h2>
+                <p>${this.language === 'ja' ? `${this.userStats.totalCaptured}個のAIモデルを捕獲しました！` : `You captured ${this.userStats.totalCaptured} AI models!`}</p>
+                <button onclick="location.reload()" style="
+                    margin-top: 20px;
+                    padding: 12px 24px;
+                    background: var(--primary);
+                    border: none;
+                    border-radius: 8px;
+                    color: white;
+                    font-family: 'Orbitron', sans-serif;
+                    cursor: pointer;
+                ">${this.language === 'ja' ? '再スタート' : 'RESTART'}</button>
+            </div>
+        `;
+        
+        document.body.appendChild(timeUpModal);
+    }
+    
     calculateDistance(pos1, pos2) {
         const dx = pos1.x - pos2.x;
         const dy = pos1.y - pos2.y;
@@ -776,4 +1010,3 @@ class AIHunterGame {
 document.addEventListener('DOMContentLoaded', () => {
     new AIHunterGame();
 });
-
