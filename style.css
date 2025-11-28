@@ -803,6 +803,26 @@ body {
     color: #ffd700;
 }
 
+@keyframes slideDown {
+    from {
+        transform: translateX(-50%) translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+#spawn-countdown {
+    animation: pulse 2s ease-in-out infinite;
+}
+
 @media (max-width: 380px) {
     #landing-page h1 {
         font-size: 1.8rem;
