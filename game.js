@@ -26,6 +26,11 @@ class AIHunterGame {
         this.aiPitch = 0;
         this.aiDistance = 0;
         
+        // Track player's physical position
+        this.playerPosition = { x: 0, y: 0, z: 0 };
+        this.lastCapturePosition = null;
+        this.minMovementDistance = 3; // meters
+        
         this.aiVisible = false;
         this.aiInFrame = false;
         
@@ -153,15 +158,14 @@ class AIHunterGame {
         let initialBeta = null;
         let calibrated = false;
         
-        // Show calibration instruction
         this.showCalibrationHint();
         
+        // Track device orientation
         window.addEventListener('deviceorientation', (e) => {
             if (e.alpha !== null && e.beta !== null) {
                 this.motionSupported = true;
                 
                 if (!calibrated) {
-                    // Auto-calibrate after 2 seconds
                     setTimeout(() => {
                         if (initialAlpha === null) {
                             initialAlpha = e.alpha;
@@ -177,17 +181,54 @@ class AIHunterGame {
                 if (alphaOffset > 180) alphaOffset -= 360;
                 if (alphaOffset < -180) alphaOffset += 360;
                 
-                // Smoother movement with gyro
-                this.heading = -alphaOffset * 1.2; // Increased sensitivity
+                this.heading = -alphaOffset * 1.2;
                 
                 let betaOffset = e.beta - initialBeta;
-                this.pitch = betaOffset * 1.0; // Better vertical tracking
+                this.pitch = betaOffset * 1.0;
                 
-                // Wider range for better movement
                 this.heading = Math.max(-270, Math.min(270, this.heading));
                 this.pitch = Math.max(-90, Math.min(90, this.pitch));
             }
         });
+        
+        // Track physical movement with accelerometer
+        if (window.DeviceMotionEvent) {
+            let lastAcceleration = { x: 0, y: 0, z: 0 };
+            let velocity = { x: 0, y: 0, z: 0 };
+            let lastTime = Date.now();
+            
+            window.addEventListener('devicemotion', (e) => {
+                if (e.acceleration) {
+                    const currentTime = Date.now();
+                    const deltaTime = (currentTime - lastTime) / 1000;
+                    
+                    // Filter out gravity and small movements
+                    const threshold = 0.5;
+                    const accel = {
+                        x: Math.abs(e.acceleration.x) > threshold ? e.acceleration.x : 0,
+                        y: Math.abs(e.acceleration.y) > threshold ? e.acceleration.y : 0,
+                        z: Math.abs(e.acceleration.z) > threshold ? e.acceleration.z : 0
+                    };
+                    
+                    // Integrate acceleration to get velocity
+                    velocity.x += accel.x * deltaTime;
+                    velocity.y += accel.y * deltaTime;
+                    velocity.z += accel.z * deltaTime;
+                    
+                    // Apply damping to prevent drift
+                    velocity.x *= 0.95;
+                    velocity.y *= 0.95;
+                    velocity.z *= 0.95;
+                    
+                    // Integrate velocity to get position
+                    this.playerPosition.x += velocity.x * deltaTime;
+                    this.playerPosition.y += velocity.y * deltaTime;
+                    this.playerPosition.z += velocity.z * deltaTime;
+                    
+                    lastTime = currentTime;
+                }
+            });
+        }
     }
 
     fallbackToTouch() {
@@ -340,6 +381,15 @@ class AIHunterGame {
         if (this.currentAI) {
             indicator.classList.remove('hidden');
             document.getElementById('target-name').textContent = this.currentAI.name;
+            
+            // Show position hint in target indicator
+            const targetLabel = document.querySelector('.target-label');
+            if (this.currentAI.positionHint && !this.aiVisible) {
+                targetLabel.textContent = this.currentAI.positionHint;
+            } else {
+                targetLabel.textContent = 'TARGET ACQUIRED';
+            }
+            
             scanIndicator.classList.add('hidden');
         } else {
             indicator.classList.add('hidden');
@@ -455,10 +505,8 @@ class AIHunterGame {
             return;
         }
         
-        // Better spawn timing: 8-15 seconds for comfortable walking
-        const baseDelay = 8000; // 8 seconds minimum
-        const randomDelay = Math.random() * 7000; // up to 7 more seconds
-        const delay = baseDelay + randomDelay;
+        // Fixed 30-second intervals to force movement
+        const delay = 30000; // Exactly 30 seconds
         
         // Show countdown timer
         this.showSpawnCountdown(delay);
@@ -474,37 +522,77 @@ class AIHunterGame {
         
         this.currentAI = uncaught[Math.floor(Math.random() * uncaught.length)];
         
-        // Spawn in wider range to encourage movement
-        const spawnRange = 120; // Increased from 60
-        const offsetAngle = (Math.random() - 0.5) * spawnRange * 2;
-        this.aiAngle = this.heading + offsetAngle;
+        // ABSOLUTE positioning - forces physical movement
+        const positions = [
+            { type: 'ceiling', pitch: -75, angle: 'random', hint: 'WALK TO DIFFERENT ROOM - LOOK UP', distance: 4 },
+            { type: 'floor', pitch: 80, angle: 'random', hint: 'MOVE TO CORNER - LOOK DOWN', distance: 3 },
+            { type: 'far_wall', pitch: -20, angle: 'opposite', hint: 'WALK TO OPPOSITE WALL', distance: 5 },
+            { type: 'behind_furniture', pitch: 30, angle: 'behind', hint: 'GO BEHIND FURNITURE/OBJECTS', distance: 4 },
+            { type: 'different_room', pitch: 0, angle: 'random', hint: 'MOVE TO DIFFERENT ROOM/AREA', distance: 6 },
+            { type: 'under_table', pitch: 60, angle: 'random', hint: 'CROUCH UNDER TABLE/DESK', distance: 2 },
+            { type: 'high_shelf', pitch: -60, angle: 'random', hint: 'FIND HIGH SHELF/CABINET', distance: 3 },
+            { type: 'doorway', pitch: 10, angle: 'perpendicular', hint: 'STAND IN DOORWAY/ENTRANCE', distance: 4 }
+        ];
         
+        const position = positions[Math.floor(Math.random() * positions.length)];
+        
+        // Set ABSOLUTE angles (not relative to current position)
+        switch(position.angle) {
+            case 'random':
+                this.aiAngle = Math.random() * 360 - 180;
+                break;
+            case 'opposite':
+                this.aiAngle = this.heading + 180 + (Math.random() - 0.5) * 60;
+                break;
+            case 'behind':
+                this.aiAngle = this.heading + 150 + Math.random() * 60;
+                break;
+            case 'perpendicular':
+                this.aiAngle = this.heading + (Math.random() > 0.5 ? 90 : -90) + (Math.random() - 0.5) * 30;
+                break;
+        }
+        
+        // Normalize angle
         while (this.aiAngle > 180) this.aiAngle -= 360;
         while (this.aiAngle < -180) this.aiAngle += 360;
         
-        // More varied vertical positioning
-        this.aiPitch = this.pitch + (Math.random() - 0.5) * 60;
-        this.aiPitch = Math.max(-60, Math.min(60, this.aiPitch));
+        // Set ABSOLUTE pitch
+        this.aiPitch = position.pitch + (Math.random() - 0.5) * 15;
+        this.aiPitch = Math.max(-90, Math.min(90, this.aiPitch));
         
-        // Add spawn notification
-        this.showSpawnNotification();
+        // Store position requirements
+        this.currentAI.positionHint = position.hint;
+        this.currentAI.requiredDistance = position.distance;
+        this.currentAI.spawnPosition = { ...this.playerPosition };
+        
+        this.showSpawnNotification(position.hint);
         this.updateTargetIndicator();
         
-        // Auto-despawn after 45 seconds if not caught
         this.aiDespawnTimer = setTimeout(() => {
             if (this.currentAI) {
                 this.despawnAI();
             }
-        }, 45000);
+        }, 25000);
     }
 
     captureAI() {
         if (!this.aiInFrame || !this.currentAI) return;
         
+        // Check if player moved enough from last capture
+        if (this.lastCapturePosition) {
+            const distance = this.calculateDistance(this.playerPosition, this.lastCapturePosition);
+            if (distance < this.minMovementDistance) {
+                this.showMovementWarning();
+                return;
+            }
+        }
+        
         const captured = this.currentAI;
         captured.caught = true;
         
-        // Clear despawn timer
+        // Update last capture position
+        this.lastCapturePosition = { ...this.playerPosition };
+        
         if (this.aiDespawnTimer) {
             clearTimeout(this.aiDespawnTimer);
             this.aiDespawnTimer = null;
@@ -514,7 +602,6 @@ class AIHunterGame {
         document.getElementById('capture-message').textContent = 
             `${captured.name} has been added to your collection!`;
         
-        // Add haptic feedback if available
         if (navigator.vibrate) {
             navigator.vibrate([100, 50, 100]);
         }
@@ -631,7 +718,7 @@ class AIHunterGame {
         }, 1000);
     }
     
-    showSpawnNotification() {
+    showSpawnNotification(hint = 'NEW TARGET DETECTED!') {
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
@@ -643,15 +730,47 @@ class AIHunterGame {
             padding: 12px 24px;
             border-radius: 8px;
             font-family: 'Orbitron', sans-serif;
-            font-size: 12px;
-            letter-spacing: 2px;
+            font-size: 11px;
+            letter-spacing: 1px;
             z-index: 1000;
             animation: slideDown 0.3s ease;
+            text-align: center;
+            max-width: 280px;
         `;
-        notification.textContent = 'NEW TARGET DETECTED!';
+        notification.innerHTML = `<div style="margin-bottom: 4px;">🎯 TARGET DETECTED</div><div style="font-size: 10px; opacity: 0.8;">${hint}</div>`;
         document.body.appendChild(notification);
         
-        setTimeout(() => notification.remove(), 3000);
+        setTimeout(() => notification.remove(), 5000);
+    }
+    
+    calculateDistance(pos1, pos2) {
+        const dx = pos1.x - pos2.x;
+        const dy = pos1.y - pos2.y;
+        const dz = pos1.z - pos2.z;
+        return Math.sqrt(dx*dx + dy*dy + dz*dz);
+    }
+    
+    showMovementWarning() {
+        const warning = document.createElement('div');
+        warning.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            z-index: 1000;
+            text-align: center;
+        `;
+        warning.innerHTML = '⚠️ MOVE TO A DIFFERENT LOCATION<br><small>You must physically move 3+ meters</small>';
+        document.body.appendChild(warning);
+        
+        setTimeout(() => warning.remove(), 3000);
     }
     
     despawnAI() {
