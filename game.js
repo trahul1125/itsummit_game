@@ -151,27 +151,41 @@ class AIHunterGame {
     enableMotion() {
         let initialAlpha = null;
         let initialBeta = null;
+        let calibrated = false;
+        
+        // Show calibration instruction
+        this.showCalibrationHint();
         
         window.addEventListener('deviceorientation', (e) => {
             if (e.alpha !== null && e.beta !== null) {
                 this.motionSupported = true;
                 
-                if (initialAlpha === null) {
-                    initialAlpha = e.alpha;
-                    initialBeta = e.beta;
+                if (!calibrated) {
+                    // Auto-calibrate after 2 seconds
+                    setTimeout(() => {
+                        if (initialAlpha === null) {
+                            initialAlpha = e.alpha;
+                            initialBeta = e.beta;
+                            calibrated = true;
+                            this.hideCalibrationHint();
+                        }
+                    }, 2000);
+                    return;
                 }
                 
                 let alphaOffset = e.alpha - initialAlpha;
                 if (alphaOffset > 180) alphaOffset -= 360;
                 if (alphaOffset < -180) alphaOffset += 360;
                 
-                this.heading = -alphaOffset;
+                // Smoother movement with gyro
+                this.heading = -alphaOffset * 1.2; // Increased sensitivity
                 
                 let betaOffset = e.beta - initialBeta;
-                this.pitch = betaOffset * 0.8;
+                this.pitch = betaOffset * 1.0; // Better vertical tracking
                 
-                this.heading = Math.max(-180, Math.min(180, this.heading));
-                this.pitch = Math.max(-60, Math.min(60, this.pitch));
+                // Wider range for better movement
+                this.heading = Math.max(-270, Math.min(270, this.heading));
+                this.pitch = Math.max(-90, Math.min(90, this.pitch));
             }
         });
     }
@@ -441,7 +455,13 @@ class AIHunterGame {
             return;
         }
         
-        const delay = 1500 + Math.random() * 2000;
+        // Better spawn timing: 8-15 seconds for comfortable walking
+        const baseDelay = 8000; // 8 seconds minimum
+        const randomDelay = Math.random() * 7000; // up to 7 more seconds
+        const delay = baseDelay + randomDelay;
+        
+        // Show countdown timer
+        this.showSpawnCountdown(delay);
         
         this.spawnTimer = setTimeout(() => {
             this.spawnAI();
@@ -454,17 +474,28 @@ class AIHunterGame {
         
         this.currentAI = uncaught[Math.floor(Math.random() * uncaught.length)];
         
-        const spawnRange = 60;
+        // Spawn in wider range to encourage movement
+        const spawnRange = 120; // Increased from 60
         const offsetAngle = (Math.random() - 0.5) * spawnRange * 2;
         this.aiAngle = this.heading + offsetAngle;
         
         while (this.aiAngle > 180) this.aiAngle -= 360;
         while (this.aiAngle < -180) this.aiAngle += 360;
         
-        this.aiPitch = this.pitch + (Math.random() - 0.5) * 30;
-        this.aiPitch = Math.max(-40, Math.min(40, this.aiPitch));
+        // More varied vertical positioning
+        this.aiPitch = this.pitch + (Math.random() - 0.5) * 60;
+        this.aiPitch = Math.max(-60, Math.min(60, this.aiPitch));
         
+        // Add spawn notification
+        this.showSpawnNotification();
         this.updateTargetIndicator();
+        
+        // Auto-despawn after 45 seconds if not caught
+        this.aiDespawnTimer = setTimeout(() => {
+            if (this.currentAI) {
+                this.despawnAI();
+            }
+        }, 45000);
     }
 
     captureAI() {
@@ -473,9 +504,20 @@ class AIHunterGame {
         const captured = this.currentAI;
         captured.caught = true;
         
+        // Clear despawn timer
+        if (this.aiDespawnTimer) {
+            clearTimeout(this.aiDespawnTimer);
+            this.aiDespawnTimer = null;
+        }
+        
         document.getElementById('captured-icon').textContent = captured.icon;
         document.getElementById('capture-message').textContent = 
             `${captured.name} has been added to your collection!`;
+        
+        // Add haptic feedback if available
+        if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100]);
+        }
         
         this.currentAI = null;
         this.aiScreenPos = null;
@@ -541,6 +583,103 @@ class AIHunterGame {
             page.classList.remove('active');
         });
         document.getElementById(pageId).classList.add('active');
+    }
+    
+    showCalibrationHint() {
+        const hint = document.createElement('div');
+        hint.id = 'calibration-hint';
+        hint.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 240, 255, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 1000;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+        `;
+        hint.innerHTML = 'HOLD PHONE STEADY<br>CALIBRATING...';
+        document.body.appendChild(hint);
+    }
+    
+    hideCalibrationHint() {
+        const hint = document.getElementById('calibration-hint');
+        if (hint) hint.remove();
+    }
+    
+    showSpawnCountdown(delay) {
+        const countdown = document.getElementById('spawn-countdown');
+        if (!countdown) return;
+        
+        let remaining = Math.ceil(delay / 1000);
+        countdown.textContent = `NEXT TARGET: ${remaining}s`;
+        countdown.style.display = 'block';
+        
+        const timer = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(timer);
+                countdown.style.display = 'none';
+            } else {
+                countdown.textContent = `NEXT TARGET: ${remaining}s`;
+            }
+        }, 1000);
+    }
+    
+    showSpawnNotification() {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 51, 102, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            letter-spacing: 2px;
+            z-index: 1000;
+            animation: slideDown 0.3s ease;
+        `;
+        notification.textContent = 'NEW TARGET DETECTED!';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.remove(), 3000);
+    }
+    
+    despawnAI() {
+        if (this.currentAI) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 165, 0, 0.9);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                font-family: 'Orbitron', sans-serif;
+                font-size: 12px;
+                letter-spacing: 2px;
+                z-index: 1000;
+            `;
+            notification.textContent = 'TARGET ESCAPED!';
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.remove(), 3000);
+            
+            this.currentAI = null;
+            this.aiScreenPos = null;
+            this.scheduleNextSpawn();
+        }
     }
 }
 
