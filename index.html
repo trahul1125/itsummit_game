@@ -17,6 +17,33 @@
                 </div>
                 <h1>AI HUNTER</h1>
                 <p class="tagline">Locate. Target. Capture.</p>
+                
+                <div style="margin: 20px 0;">
+                    <select id="language-select" style="
+                        background: rgba(0, 240, 255, 0.1);
+                        border: 1px solid var(--primary);
+                        border-radius: 8px;
+                        padding: 8px 16px;
+                        color: var(--primary);
+                        font-family: 'Orbitron', sans-serif;
+                        font-size: 12px;
+                    ">
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                    </select>
+                </div>
+                
+                <div id="login-info" style="
+                    background: rgba(0, 240, 255, 0.1);
+                    border: 1px solid rgba(0, 240, 255, 0.3);
+                    border-radius: 8px;
+                    padding: 12px;
+                    margin: 20px 0;
+                    font-size: 12px;
+                    color: var(--primary);
+                    text-align: center;
+                    font-family: 'Orbitron', sans-serif;
+                ">Please enter correct name and organization</div>
             </div>
             
             <form id="user-form">
@@ -55,8 +82,18 @@
             <div id="hud-top">
                 <div id="progress-bar">
                     <div id="progress-fill"></div>
-                    <span id="progress-text"><span id="caught-count">0</span>/<span id="total-count">10</span></span>
+                    <span id="progress-text"><span id="caught-count">0</span>/<span id="total-count">15</span></span>
                 </div>
+                <div id="user-stats" style="
+                    background: rgba(0, 240, 255, 0.1);
+                    border: 1px solid var(--primary);
+                    border-radius: 8px;
+                    padding: 8px 12px;
+                    font-family: 'Orbitron', sans-serif;
+                    font-size: 14px;
+                    color: var(--primary);
+                    font-weight: bold;
+                ">0/15</div>
                 <div id="inventory-btn">
                     <span class="inv-icon"></span>
                 </div>
@@ -93,7 +130,7 @@
                 <button id="back-to-game" class="back-btn"></button>
                 <h2>COLLECTION</h2>
                 <div class="inv-stats">
-                    <span id="inv-caught">0</span>/<span id="inv-total">10</span>
+                    <span id="inv-caught">0</span>/<span id="inv-total">15</span>
                 </div>
             </div>
             <div id="inventory-grid"></div>
