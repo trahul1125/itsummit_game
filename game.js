@@ -232,62 +232,9 @@ class AIHunterGame {
     }
 
     fallbackToTouch() {
-        let lastTouchX = null;
-        let lastTouchY = null;
-        let isDragging = false;
-        
-        this.canvas.style.pointerEvents = 'auto';
-        
-        const handleStart = (clientX, clientY) => {
-            isDragging = true;
-            lastTouchX = clientX;
-            lastTouchY = clientY;
-        };
-        
-        const handleMove = (clientX, clientY) => {
-            if (!isDragging) return;
-            
-            const deltaX = clientX - lastTouchX;
-            const deltaY = clientY - lastTouchY;
-            
-            this.heading += deltaX * 0.5;
-            this.pitch -= deltaY * 0.3;
-            
-            this.heading = ((this.heading % 360) + 360) % 360;
-            if (this.heading > 180) this.heading -= 360;
-            this.pitch = Math.max(-60, Math.min(60, this.pitch));
-            
-            lastTouchX = clientX;
-            lastTouchY = clientY;
-        };
-        
-        const handleEnd = () => {
-            isDragging = false;
-        };
-
-        this.canvas.addEventListener('touchstart', (e) => {
-            const touch = e.touches[0];
-            handleStart(touch.clientX, touch.clientY);
-        });
-
-        this.canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            handleMove(touch.clientX, touch.clientY);
-        }, { passive: false });
-
-        this.canvas.addEventListener('touchend', handleEnd);
-
-        this.canvas.addEventListener('mousedown', (e) => {
-            handleStart(e.clientX, e.clientY);
-        });
-
-        this.canvas.addEventListener('mousemove', (e) => {
-            handleMove(e.clientX, e.clientY);
-        });
-
-        this.canvas.addEventListener('mouseup', handleEnd);
-        this.canvas.addEventListener('mouseleave', handleEnd);
+        // Disable touch controls - use device orientation only
+        // This prevents dragging AI models around with finger
+        console.log('Touch controls disabled - use device orientation');
     }
 
     startGameLoop() {
@@ -307,17 +254,19 @@ class AIHunterGame {
             
             const pitchDiff = this.aiPitch - this.pitch;
             
-            const fovH = 120;
-            const fovV = 90;
+            const fovH = 60;
+            const fovV = 45;
             
             this.aiVisible = Math.abs(angleDiff) < fovH && Math.abs(pitchDiff) < fovV;
             
             if (this.aiVisible) {
-                const screenX = this.frameCenter.x + (angleDiff / fovH) * this.canvas.width * 0.5;
-                const screenY = this.frameCenter.y - (pitchDiff / fovV) * this.canvas.height * 0.5;
+                // Fixed position calculation - AI stays in world position
+                const screenX = this.frameCenter.x + (angleDiff / fovH) * this.canvas.width * 0.4;
+                const screenY = this.frameCenter.y - (pitchDiff / fovV) * this.canvas.height * 0.4;
                 
                 this.aiScreenPos = { x: screenX, y: screenY };
                 
+                // Check if AI is in targeting frame
                 const dx = screenX - this.frameCenter.x;
                 const dy = screenY - this.frameCenter.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
@@ -527,22 +476,23 @@ class AIHunterGame {
         
         const position = positions[Math.floor(Math.random() * positions.length)];
         
-        // Set ABSOLUTE angles (not relative to current position)
+        // Set FIXED world angles (not relative to current heading)
+        const baseAngle = Math.random() * 360 - 180; // Random base angle
         switch(position.angle) {
             case 'random':
-                this.aiAngle = Math.random() * 360 - 180;
+                this.aiAngle = baseAngle;
                 break;
             case 'opposite':
-                this.aiAngle = this.heading + 180 + (Math.random() - 0.5) * 60;
+                this.aiAngle = baseAngle + 180;
                 break;
             case 'behind':
-                this.aiAngle = this.heading + 150 + Math.random() * 60;
+                this.aiAngle = baseAngle + 180;
                 break;
             case 'left':
-                this.aiAngle = this.heading - 90 + (Math.random() - 0.5) * 30;
+                this.aiAngle = baseAngle - 90;
                 break;
             case 'right':
-                this.aiAngle = this.heading + 90 + (Math.random() - 0.5) * 30;
+                this.aiAngle = baseAngle + 90;
                 break;
         }
         
@@ -550,9 +500,9 @@ class AIHunterGame {
         while (this.aiAngle > 180) this.aiAngle -= 360;
         while (this.aiAngle < -180) this.aiAngle += 360;
         
-        // Set ABSOLUTE pitch
+        // Set FIXED world pitch
         this.aiPitch = position.pitch + (Math.random() - 0.5) * 15;
-        this.aiPitch = Math.max(-90, Math.min(90, this.aiPitch));
+        this.aiPitch = Math.max(-60, Math.min(60, this.aiPitch));
         
         // Store position requirements
         this.currentAI.positionHint = position.hint;
@@ -566,15 +516,8 @@ class AIHunterGame {
     captureAI() {
         if (!this.aiInFrame || !this.currentAI) return;
         
-        // Removed movement distance check for easier gameplay
-        
         const captured = this.currentAI;
         captured.caught = true;
-        
-        // Update last capture position
-        this.lastCapturePosition = { ...this.playerPosition };
-        
-        // Removed despawn timer
         
         document.getElementById('captured-icon').textContent = captured.icon;
         document.getElementById('capture-message').textContent = 
