@@ -41,6 +41,7 @@ class AIHunterGame {
         this.minMovementDistance = 3;
         this.distanceTraveled = 0;
         this.waitingForMovement = false;
+        this.lastCapturedAI = null;
         
         this.aiVisible = false;
         this.aiInFrame = false;
@@ -342,17 +343,23 @@ class AIHunterGame {
         const label = document.getElementById('capture-label');
         const frame = document.getElementById('targeting-frame');
         
+        const texts = {
+            en: { capture: 'CAPTURE', aimTarget: 'AIM AT TARGET', findTarget: 'FIND TARGET', noTarget: 'NO TARGET' },
+            ja: { capture: '捕獲', aimTarget: 'ターゲットを狙う', findTarget: 'ターゲットを探す', noTarget: 'ターゲットなし' }
+        };
+        const t = texts[this.language];
+        
         if (this.aiInFrame && this.aiVisible) {
             btn.disabled = false;
-            label.textContent = 'CAPTURE';
+            label.textContent = t.capture;
             label.classList.add('ready');
             frame.classList.add('locked');
         } else {
             btn.disabled = true;
             if (this.currentAI) {
-                label.textContent = this.aiVisible ? 'AIM AT TARGET' : 'FIND TARGET';
+                label.textContent = this.aiVisible ? t.aimTarget : t.findTarget;
             } else {
-                label.textContent = 'NO TARGET';
+                label.textContent = t.noTarget;
             }
             label.classList.remove('ready');
             frame.classList.remove('locked');
@@ -371,7 +378,7 @@ class AIHunterGame {
             if (this.currentAI.positionHint && !this.aiVisible) {
                 targetLabel.textContent = this.currentAI.positionHint;
             } else {
-                targetLabel.textContent = 'TARGET ACQUIRED';
+                targetLabel.textContent = this.language === 'ja' ? 'ターゲット獲得' : 'TARGET ACQUIRED';
             }
             
             scanIndicator.classList.add('hidden');
@@ -566,6 +573,7 @@ class AIHunterGame {
         const captured = this.currentAI;
         captured.caught = true;
         this.userStats.totalCaptured++;
+        this.lastCapturedAI = captured; // Store for info display
         
         const capturedImg = document.getElementById('captured-icon');
         capturedImg.innerHTML = `<img src="${captured.icon}" style="width: 60px; height: 60px; object-fit: contain;" onerror="this.innerHTML='🤖'">`;
@@ -736,9 +744,12 @@ class AIHunterGame {
         const counter = document.getElementById('distance-counter');
         if (counter) {
             const remaining = Math.max(0, this.minMovementDistance - this.distanceTraveled);
+            const walkText = this.language === 'ja' ? '歩いて次のターゲットをアンロック' : 'WALK TO UNLOCK NEXT TARGET';
+            const remainingText = this.language === 'ja' ? '残り' : 'remaining';
+            
             counter.innerHTML = `
-                <div>WALK TO UNLOCK NEXT TARGET</div>
-                <div style="font-size: 18px; margin: 8px 0;">${remaining.toFixed(1)}m remaining</div>
+                <div>${walkText}</div>
+                <div style="font-size: 18px; margin: 8px 0;">${remaining.toFixed(1)}m ${remainingText}</div>
                 <div style="width: 200px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; margin: 0 auto;">
                     <div style="width: ${Math.min(100, (this.distanceTraveled / this.minMovementDistance) * 100)}%; height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.3s;"></div>
                 </div>
@@ -775,13 +786,12 @@ class AIHunterGame {
     }
     
     showAIInfo() {
-        const capturedAIs = this.aiModels.filter(ai => ai.caught);
-        const lastCaptured = capturedAIs[capturedAIs.length - 1];
-        
-        if (!lastCaptured) {
+        if (!this.lastCapturedAI) {
             this.startMovementPhase();
             return;
         }
+        
+        const lastCaptured = this.lastCapturedAI;
         
         const infoModal = document.createElement('div');
         infoModal.id = 'ai-info-modal';
@@ -838,7 +848,19 @@ class AIHunterGame {
                 nameLabel: 'HUNTER ID',
                 orgLabel: 'ORGANIZATION',
                 startBtn: 'INITIALIZE',
-                infoText: 'Please enter correct name and organization'
+                infoText: 'Please enter correct name and organization',
+                scanText: 'SCANNING AREA...',
+                scanHint: 'Move your device to find AI models',
+                targetAcquired: 'TARGET ACQUIRED',
+                noTarget: 'NO TARGET',
+                findTarget: 'FIND TARGET',
+                aimTarget: 'AIM AT TARGET',
+                capture: 'CAPTURE',
+                collection: 'COLLECTION',
+                captured: 'CAPTURED',
+                continue: 'CONTINUE',
+                walkToUnlock: 'WALK TO UNLOCK NEXT TARGET',
+                remaining: 'remaining'
             },
             ja: {
                 title: 'AI ハンター',
@@ -846,11 +868,25 @@ class AIHunterGame {
                 nameLabel: 'ハンターID',
                 orgLabel: '組織',
                 startBtn: '開始',
-                infoText: '正しい名前と組織を入力してください'
+                infoText: '正しい名前と組織を入力してください',
+                scanText: 'エリアスキャン中...',
+                scanHint: 'デバイスを動かしてAIモデルを探してください',
+                targetAcquired: 'ターゲット獲得',
+                noTarget: 'ターゲットなし',
+                findTarget: 'ターゲットを探す',
+                aimTarget: 'ターゲットを狙う',
+                capture: '捕獲',
+                collection: 'コレクション',
+                captured: '捕獲成功',
+                continue: '続ける',
+                walkToUnlock: '歩いて次のターゲットをアンロック',
+                remaining: '残り'
             }
         };
         
         const t = texts[this.language];
+        
+        // Update login page
         if (document.querySelector('#landing-page h1')) {
             document.querySelector('#landing-page h1').textContent = t.title;
             document.querySelector('.tagline').textContent = t.tagline;
@@ -858,6 +894,21 @@ class AIHunterGame {
             document.querySelector('label[for="organization"]').textContent = t.orgLabel;
             document.querySelector('.start-btn span').textContent = t.startBtn;
             document.getElementById('login-info').textContent = t.infoText;
+        }
+        
+        // Update game interface
+        if (document.querySelector('.scan-text')) {
+            document.querySelector('.scan-text').textContent = t.scanText;
+            document.querySelector('.scan-hint').textContent = t.scanHint;
+        }
+        
+        if (document.querySelector('.inv-header h2')) {
+            document.querySelector('.inv-header h2').textContent = t.collection;
+        }
+        
+        if (document.querySelector('#success-modal h3')) {
+            document.querySelector('#success-modal h3').textContent = t.captured;
+            document.querySelector('#continue-btn').textContent = t.continue;
         }
     }
     
