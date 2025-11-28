@@ -431,6 +431,7 @@ class AIHunterGame {
         
         this.ctx.save();
         
+        // Draw glow effect
         const gradient = this.ctx.createRadialGradient(x, floatY, 0, x, floatY, size * 1.5);
         gradient.addColorStop(0, 'rgba(0, 240, 255, 0.3)');
         gradient.addColorStop(0.5, 'rgba(124, 58, 237, 0.2)');
@@ -441,24 +442,42 @@ class AIHunterGame {
         this.ctx.arc(x, floatY, size * 1.5, 0, Math.PI * 2);
         this.ctx.fill();
         
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-            this.ctx.save();
-            this.ctx.shadowColor = this.aiInFrame ? '#10b981' : '#00f0ff';
-            this.ctx.shadowBlur = this.aiInFrame ? 30 : 20;
-            this.ctx.drawImage(img, x - size/2, floatY - size/2, size, size);
-            this.ctx.restore();
-        };
-        img.onerror = () => {
-            this.ctx.font = `${size * 0.7}px Arial`;
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillStyle = 'white';
-            this.ctx.fillText('🤖', x, floatY);
-        };
-        img.src = this.currentAI.icon;
+        // Draw solid background circle for icon
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        this.ctx.shadowColor = this.aiInFrame ? '#10b981' : '#00f0ff';
+        this.ctx.shadowBlur = this.aiInFrame ? 30 : 20;
+        this.ctx.beginPath();
+        this.ctx.arc(x, floatY, size * 0.6, 0, Math.PI * 2);
+        this.ctx.fill();
         
+        // Use emoji icons that are always visible
+        const emojiMap = {
+            'GPT-4': '🤖',
+            'Claude': '🧠', 
+            'Gemini': '💎',
+            'LLaMA': '🦙',
+            'PaLM': '🌴',
+            'BERT': '📚',
+            'T5': '🔄',
+            'GPT-3': '⚡',
+            'Mistral': '🌪️',
+            'Falcon': '🦅',
+            'Rufus': '🛍️',
+            'Copilot': '💻',
+            'Bard': '🎭',
+            'ChatGPT': '💬',
+            'Alexa': '🔊'
+        };
+        
+        // Draw emoji icon
+        this.ctx.shadowBlur = 0;
+        this.ctx.font = `${size * 0.5}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillText(emojiMap[this.currentAI.name] || '🤖', x, floatY);
+        
+        // Draw name
         this.ctx.font = 'bold 14px Orbitron, sans-serif';
         this.ctx.fillStyle = 'white';
         this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
