@@ -97,9 +97,6 @@
                     font-weight: bold;
                 ">0/15</div>
                 <div class="hud-buttons">
-                    <div id="scoreboard-game-btn">
-                        <span class="scoreboard-icon">🏆</span>
-                    </div>
                     <div id="inventory-btn">
                         <span class="inv-icon"></span>
                     </div>
@@ -164,78 +161,10 @@
             </div>
         </div>
         
-        <div id="scoreboard-page" class="page">
-            <div class="inv-header">
-                <button id="back-from-scoreboard" class="back-btn"></button>
-                <h2>🏆 SCOREBOARD</h2>
-                <div class="inv-stats">
-                    <button id="test-score" style="
-                        background: rgba(255, 51, 102, 0.1);
-                        border: 1px solid #ff3366;
-                        border-radius: 6px;
-                        color: #ff3366;
-                        padding: 4px 8px;
-                        font-size: 12px;
-                        cursor: pointer;
-                        font-family: 'Orbitron', sans-serif;
-                        margin-right: 8px;
-                    ">🧪 TEST</button>
-                    <button id="refresh-scores" style="
-                        background: rgba(0, 240, 255, 0.1);
-                        border: 1px solid var(--primary);
-                        border-radius: 6px;
-                        color: var(--primary);
-                        padding: 4px 8px;
-                        font-size: 12px;
-                        cursor: pointer;
-                        font-family: 'Orbitron', sans-serif;
-                    ">🔄 REFRESH</button>
-                </div>
-            </div>
-            <div id="scoreboard-grid"></div>
-        </div>
+
     </div>
 
-    <script src="leaderboard.js"></script>
-    <script>
-        // Global game instance for refresh functionality
-        let gameInstance = null;
-        
-        // Add test and refresh functionality
-        document.addEventListener('DOMContentLoaded', () => {
-            const testBtn = document.getElementById('test-score');
-            const refreshBtn = document.getElementById('refresh-scores');
-            
-            if (testBtn) {
-                testBtn.addEventListener('click', async () => {
-                    testBtn.textContent = '⏳ TESTING...';
-                    try {
-                        await window.leaderboard.saveScore(120000, 5, 'Test Player', 'Test Org');
-                        alert('Test score saved! Check your gist and refresh.');
-                    } catch (error) {
-                        alert('Test failed: ' + error.message);
-                    }
-                    testBtn.textContent = '🧪 TEST';
-                });
-            }
-            
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', async () => {
-                    refreshBtn.textContent = '⏳ LOADING...';
-                    try {
-                        const scores = await window.leaderboard.loadScores();
-                        if (gameInstance) {
-                            gameInstance.updateScoreboardDisplay(scores);
-                        }
-                    } catch (error) {
-                        console.error('Failed to refresh scores:', error);
-                    }
-                    refreshBtn.textContent = '🔄 REFRESH';
-                });
-            }
-        });
-    </script>
+
     <script src="game.js"></script>
 </body>
 </html>
-
