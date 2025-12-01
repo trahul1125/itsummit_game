@@ -7,21 +7,21 @@ class AIHunterGame {
         this.userStats = { totalCaptured: 0, totalModels: 15 };
         
         this.aiModels = [
-            { name: 'GPT-4', emoji: '🤖', caught: false, rarity: 'legendary', info: { en: 'GPT-4 is OpenAI\'s most advanced language model, capable of understanding and generating human-like text with remarkable accuracy and creativity.', ja: 'GPT-4はOpenAIの最も高度な言語モデルで、驚くべき精度と創造性で人間のようなテキストを理解し生成することができます。' } },
-            { name: 'Claude', emoji: '🧠', caught: false, rarity: 'legendary', info: { en: 'Claude is Anthropic\'s AI assistant focused on being helpful, harmless, and honest through constitutional AI training methods.', ja: 'ClaudeはAnthropicのAIアシスタントで、憲法的AI訓練方法により、有用で無害で正直であることに焦点を当てています。' } },
-            { name: 'Gemini', emoji: '💎', caught: false, rarity: 'epic', info: { en: 'Gemini is Google\'s multimodal AI model that can understand and process text, images, audio, and video simultaneously.', ja: 'GeminiはGoogleのマルチモーダルAIモデルで、テキスト、画像、音声、動画を同時に理解し処理することができます。' } },
-            { name: 'LLaMA', emoji: '🦙', caught: false, rarity: 'epic', info: { en: 'LLaMA (Large Language Model Meta AI) is Meta\'s foundation language model designed for research and commercial applications.', ja: 'LLaMA（Large Language Model Meta AI）は、研究および商用アプリケーション向けに設計されたMetaの基盤言語モデルです。' } },
-            { name: 'PaLM', emoji: '🌴', caught: false, rarity: 'rare', info: { en: 'PaLM (Pathways Language Model) is Google\'s 540-billion parameter transformer model with breakthrough reasoning capabilities.', ja: 'PaLM（Pathways Language Model）は、画期的な推論能力を持つGoogleの5400億パラメータのトランスフォーマーモデルです。' } },
-            { name: 'BERT', emoji: '📚', caught: false, rarity: 'common', info: { en: 'BERT revolutionized NLP by introducing bidirectional training, allowing better understanding of context in language processing.', ja: 'BERTは双方向訓練を導入してNLPに革命をもたらし、言語処理における文脈のより良い理解を可能にしました。' } },
-            { name: 'T5', emoji: '🔄', caught: false, rarity: 'common', info: { en: 'T5 (Text-to-Text Transfer Transformer) treats every NLP problem as a text generation task, unifying various language tasks.', ja: 'T5（Text-to-Text Transfer Transformer）は、すべてのNLP問題をテキスト生成タスクとして扱い、様々な言語タスクを統合します。' } },
-            { name: 'GPT-3', emoji: '⚡', caught: false, rarity: 'rare', info: { en: 'GPT-3 was a breakthrough 175-billion parameter model that demonstrated emergent abilities in language understanding and generation.', ja: 'GPT-3は1750億パラメータの画期的なモデルで、言語理解と生成において創発的能力を実証しました。' } },
-            { name: 'Mistral', emoji: '🌪️', caught: false, rarity: 'epic', info: { en: 'Mistral AI creates efficient, high-performance language models focused on practical applications and deployment flexibility.', ja: 'Mistral AIは、実用的なアプリケーションと展開の柔軟性に焦点を当てた効率的で高性能な言語モデルを作成します。' } },
-            { name: 'Falcon', emoji: '🦅', caught: false, rarity: 'rare', info: { en: 'Falcon is a family of open-source large language models trained on refined web data for superior performance.', ja: 'Falconは、優れた性能のために洗練されたWebデータで訓練されたオープンソース大規模言語モデルのファミリーです。' } },
-            { name: 'Rufus', emoji: '🛍️', caught: false, rarity: 'epic', info: { en: 'Rufus is Amazon\'s generative AI-powered shopping assistant that helps users find, compare, and purchase products through natural conversations.', ja: 'RufusはAmazonの生成AI搭載ショッピングアシスタントで、自然な会話を通じてユーザーが商品を見つけ、比較し、購入するのを支援します。' } },
-            { name: 'Copilot', emoji: '💻', caught: false, rarity: 'rare', info: { en: 'GitHub Copilot is an AI pair programmer that suggests code and entire functions in real-time, powered by OpenAI Codex.', ja: 'GitHub CopilotはOpenAI Codexを搭載したAIペアプログラマーで、リアルタイムでコードや関数全体を提案します。' } },
-            { name: 'Bard', emoji: '🎭', caught: false, rarity: 'epic', info: { en: 'Bard was Google\'s conversational AI service designed to provide helpful, accurate, and up-to-date information through natural dialogue.', ja: 'BardはGoogleの会話型AIサービスで、自然な対話を通じて有用で正確かつ最新の情報を提供するように設計されていました。' } },
-            { name: 'ChatGPT', emoji: '💬', caught: false, rarity: 'legendary', info: { en: 'ChatGPT is OpenAI\'s conversational AI that can engage in human-like dialogue, answer questions, and assist with various tasks.', ja: 'ChatGPTはOpenAIの会話型AIで、人間のような対話を行い、質問に答え、様々なタスクを支援することができます。' } },
-            { name: 'Alexa', emoji: '🔊', caught: false, rarity: 'common', info: { en: 'Alexa is Amazon\'s cloud-based voice service that powers Echo devices and enables voice interaction with smart home devices.', ja: 'AlexaはAmazonのクラウドベース音声サービスで、Echoデバイスを動かし、スマートホームデバイスとの音声インタラクションを可能にします。' } }
+            { name: 'Context Engineering', emoji: '🎯', caught: false, rarity: 'legendary', info: { en: 'Context Engineering is the art of crafting precise prompts and context to guide AI models toward desired outputs and behaviors.', ja: 'コンテキストエンジニアリングは、AIモデルを望ましい出力と動作に導くための正確なプロンプトとコンテキストを作成する技術です。' } },
+            { name: 'Toon', emoji: '🎨', caught: false, rarity: 'epic', info: { en: 'Toon refers to AI-generated cartoon and animation content, revolutionizing digital art and entertainment creation.', ja: 'Toonは、AI生成の漫画やアニメーションコンテンツを指し、デジタルアートとエンターテイメント制作に革命をもたらしています。' } },
+            { name: 'LSTM', emoji: '🔗', caught: false, rarity: 'rare', info: { en: 'Long Short-Term Memory networks are specialized neural networks designed to remember information for long periods in sequence processing.', ja: 'LSTM（Long Short-Term Memory）は、シーケンス処理において長期間情報を記憶するように設計された特殊なニューラルネットワークです。' } },
+            { name: 'SLM', emoji: '📱', caught: false, rarity: 'epic', info: { en: 'Small Language Models are compact AI models optimized for efficiency while maintaining strong performance on specific tasks.', ja: 'SLM（Small Language Model）は、特定のタスクで強力な性能を維持しながら効率性を最適化したコンパクトなAIモデルです。' } },
+            { name: 'Foundation Model', emoji: '🏗️', caught: false, rarity: 'legendary', info: { en: 'Foundation Models are large-scale pre-trained models that serve as the base for various AI applications and fine-tuning.', ja: 'ファウンデーションモデルは、様々なAIアプリケーションとファインチューニングのベースとなる大規模な事前訓練済みモデルです。' } },
+            { name: 'Token', emoji: '🎫', caught: false, rarity: 'common', info: { en: 'Tokens are the basic units of text that AI models process, representing words, subwords, or characters in natural language.', ja: 'トークンは、AIモデルが処理するテキストの基本単位で、自然言語における単語、部分語、または文字を表します。' } },
+            { name: 'Agentic AI', emoji: '🤖', caught: false, rarity: 'legendary', info: { en: 'Agentic AI refers to autonomous AI systems that can take independent actions and make decisions to achieve specific goals.', ja: 'エージェンティックAIは、特定の目標を達成するために独立した行動を取り、決定を下すことができる自律的なAIシステムを指します。' } },
+            { name: 'Edge Computing', emoji: '⚡', caught: false, rarity: 'epic', info: { en: 'Edge Computing brings computation and data storage closer to data sources, reducing latency and improving real-time processing.', ja: 'エッジコンピューティングは、計算とデータストレージをデータソースに近づけ、遅延を減らしリアルタイム処理を改善します。' } },
+            { name: 'Quantum Computing', emoji: '⚛️', caught: false, rarity: 'legendary', info: { en: 'Quantum Computing uses quantum mechanical phenomena to process information in ways that could revolutionize computation.', ja: '量子コンピューティングは、量子力学的現象を使用して、計算に革命をもたらす可能性のある方法で情報を処理します。' } },
+            { name: 'WiFi 6', emoji: '📶', caught: false, rarity: 'rare', info: { en: 'WiFi 6 is the latest wireless standard offering faster speeds, lower latency, and better performance in crowded environments.', ja: 'WiFi 6は、より高速な速度、低遅延、混雑した環境でのより良いパフォーマンスを提供する最新のワイヤレス標準です。' } },
+            { name: 'Neural Architecture Search', emoji: '🔍', caught: false, rarity: 'epic', info: { en: 'Neural Architecture Search automates the design of neural network architectures using AI to find optimal model structures.', ja: 'ニューラルアーキテクチャサーチは、AIを使用してニューラルネットワークアーキテクチャの設計を自動化し、最適なモデル構造を見つけます。' } },
+            { name: 'Federated Learning', emoji: '🌐', caught: false, rarity: 'rare', info: { en: 'Federated Learning enables machine learning across decentralized data without centralizing sensitive information.', ja: 'フェデレーテッドラーニングは、機密情報を集中化することなく、分散データ間での機械学習を可能にします。' } },
+            { name: 'Multimodal AI', emoji: '🎭', caught: false, rarity: 'epic', info: { en: 'Multimodal AI processes and understands multiple types of data simultaneously, including text, images, audio, and video.', ja: 'マルチモーダルAIは、テキスト、画像、音声、動画を含む複数のタイプのデータを同時に処理し理解します。' } },
+            { name: 'Reinforcement Learning', emoji: '🎮', caught: false, rarity: 'rare', info: { en: 'Reinforcement Learning trains AI agents through trial and error, learning optimal actions through rewards and penalties.', ja: '強化学習は、試行錯誤を通じてAIエージェントを訓練し、報酬と罰を通じて最適な行動を学習します。' } },
+            { name: 'Transformer Architecture', emoji: '🔄', caught: false, rarity: 'legendary', info: { en: 'Transformer Architecture revolutionized AI with attention mechanisms, becoming the foundation for modern language models.', ja: 'トランスフォーマーアーキテクチャは、アテンション機構でAIに革命をもたらし、現代の言語モデルの基盤となりました。' } }
         ];
         
         this.currentAI = null;
@@ -500,7 +500,7 @@ class AIHunterGame {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillStyle = '#000';
-        this.ctx.fillText(this.currentAI.emoji || '🤖', x, floatY);
+        this.ctx.fillText(this.currentAI.emoji, x, floatY);
         
         // Draw name
         this.ctx.font = 'bold 14px Orbitron, sans-serif';
@@ -562,7 +562,7 @@ class AIHunterGame {
         this.lastCapturedAI = captured;
         
         const capturedImg = document.getElementById('captured-icon');
-        capturedImg.innerHTML = `<div style="font-size: 60px;">${captured.emoji || '🤖'}</div>`;
+        capturedImg.innerHTML = `<div style="font-size: 60px;">${captured.emoji}</div>`;
         
         document.getElementById('capture-message').textContent = 
             this.language === 'ja' ? `${captured.name}をコレクションに追加しました！` : `${captured.name} has been added to your collection!`;
@@ -659,7 +659,7 @@ class AIHunterGame {
                 'Rufus': '🛍️', 'Copilot': '💻', 'Bard': '🎭', 'ChatGPT': '💬', 'Alexa': '🔊'
             };
             item.innerHTML = `
-                <div class="icon" style="font-size: 48px;">${ai.emoji || '🤖'}</div>
+                <div class="icon" style="font-size: 48px;">${ai.emoji}</div>
                 <div class="name">${ai.caught ? ai.name : '???'}</div>
             `;
             grid.appendChild(item);
@@ -900,7 +900,7 @@ class AIHunterGame {
                 " onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
                     ×
                 </button>
-                <div style="font-size: 80px; margin-bottom: 20px;">${lastCaptured.emoji || '🤖'}</div>
+                <div style="font-size: 80px; margin-bottom: 20px;">${lastCaptured.emoji}</div>
                 <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 1.5rem;">${lastCaptured.name}</h3>
                 <p style="line-height: 1.6; font-size: 14px; color: rgba(255,255,255,0.8);">${lastCaptured.info[this.language]}</p>
             </div>
@@ -1136,61 +1136,7 @@ class AIHunterGame {
 
 }
 
-async function testJsonBin() {
-    try {
-        // Get existing data first
-        const getResponse = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee', {
-            headers: {
-                'X-Master-Key': '$2a$10$hl8RiwmuMk16Yo4UDtezcedlmX9w4GFAsPSAn14g1LFhphVHJVnhC'
-            }
-        });
-        
-        let existingData = { completions: [] };
-        if (getResponse.ok) {
-            const result = await getResponse.json();
-            existingData = result.record || { completions: [] };
-            if (!existingData.completions) existingData.completions = [];
-        }
-        
-        const testData = {
-            name: 'Test Player',
-            organization: 'Test Org',
-            gameTime: 120000,
-            date: new Date().toISOString(),
-            timestamp: Date.now()
-        };
-        
-        existingData.completions.push(testData);
-        
-        const response = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': '$2a$10$hl8RiwmuMk16Yo4UDtezcedlmX9w4GFAsPSAn14g1LFhphVHJVnhC'
-            },
-            body: JSON.stringify(existingData)
-        });
-        
-        if (response.ok) {
-            alert('✅ JSONBin test successful! Check your bin.');
-        } else {
-            alert('❌ Test failed: ' + response.status);
-        }
-    } catch (error) {
-        alert('❌ Test error: ' + error.message);
-    }
-}
 
-function skipToEnd() {
-    if (window.gameInstance) {
-        window.gameInstance.aiModels.forEach(ai => ai.caught = true);
-        window.gameInstance.userStats.totalCaptured = 15;
-        window.gameInstance.updateProgress();
-        window.gameInstance.updateInventory();
-        window.gameInstance.updateUserStats();
-        window.gameInstance.gameComplete();
-    }
-}
 
 document.addEventListener('DOMContentLoaded', () => {
     window.gameInstance = new AIHunterGame();
