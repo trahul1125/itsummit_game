@@ -36,18 +36,20 @@ class AIHunterGame {
         this.aiPitch = 0;
         this.aiDistance = 0;
         
-        this.playerPosition = { x: 0, y: 0, z: 0 };
-        this.lastCapturePosition = null;
-        this.minMovementDistance = 3;
+        this.stepCount = 0;
+        this.lastStepTime = 0;
+        this.minMovementDistance = 1;
         this.distanceTraveled = 0;
         this.waitingForMovement = false;
         this.lastCapturedAI = null;
+        this.movementBuffer = [];
+        this.walkingSteps = [];
         
         this.aiVisible = false;
         this.aiInFrame = false;
         
         this.frameCenter = { x: 0, y: 0 };
-        this.frameRadius = 100;
+        this.frameRadius = 50; // Much smaller for precision
         
         this.spawnTimer = null;
         this.animationId = null;
@@ -100,9 +102,7 @@ class AIHunterGame {
             this.showInventory();
         });
 
-        document.getElementById('scoreboard-btn').addEventListener('click', () => {
-            this.showScoreboard();
-        });
+
 
         document.getElementById('back-from-scoreboard').addEventListener('click', () => {
             this.showGame();
@@ -217,46 +217,58 @@ class AIHunterGame {
         window.addEventListener('deviceorientation', handleOrientation);
         window.addEventListener('deviceorientationabsolute', handleOrientation);
         
+        // Balanced step detection - prevents hand waving but allows walking
         if (window.DeviceMotionEvent) {
-            let velocity = { x: 0, y: 0, z: 0 };
-            let lastTime = Date.now();
+            let lastAccel = 0;
+            let stepCandidates = [];
             
             window.addEventListener('devicemotion', (e) => {
                 if (e.acceleration) {
                     const currentTime = Date.now();
-                    const deltaTime = (currentTime - lastTime) / 1000;
+                    const yAccel = Math.abs(e.acceleration.y || 0);
+                    const totalAccel = Math.sqrt(
+                        (e.acceleration.x || 0) ** 2 + 
+                        (e.acceleration.y || 0) ** 2 + 
+                        (e.acceleration.z || 0) ** 2
+                    );
                     
-                    const threshold = 0.5;
-                    const accel = {
-                        x: Math.abs(e.acceleration.x) > threshold ? e.acceleration.x : 0,
-                        y: Math.abs(e.acceleration.y) > threshold ? e.acceleration.y : 0,
-                        z: Math.abs(e.acceleration.z) > threshold ? e.acceleration.z : 0
-                    };
+                    this.movementBuffer.push({ 
+                        accel: totalAccel, 
+                        yAccel: yAccel,
+                        time: currentTime 
+                    });
+                    if (this.movementBuffer.length > 20) this.movementBuffer.shift();
                     
-                    velocity.x += accel.x * deltaTime;
-                    velocity.y += accel.y * deltaTime;
-                    velocity.z += accel.z * deltaTime;
+                    // Step detection with moderate validation
+                    const timeSinceLastStep = currentTime - this.lastStepTime;
+                    const isValidStepTiming = timeSinceLastStep > 500; // Prevent rapid hand movements
+                    const isWalkingAcceleration = totalAccel > 5 && totalAccel < 25; // Walking range
+                    const hasVerticalComponent = yAccel > 2; // Walking has vertical bounce
+                    const isPeakAcceleration = totalAccel > lastAccel;
                     
-                    velocity.x *= 0.95;
-                    velocity.y *= 0.95;
-                    velocity.z *= 0.95;
-                    
-                    const oldPosition = { ...this.playerPosition };
-                    this.playerPosition.x += velocity.x * deltaTime;
-                    this.playerPosition.y += velocity.y * deltaTime;
-                    this.playerPosition.z += velocity.z * deltaTime;
-                    
-                    if (this.waitingForMovement && this.lastCapturePosition) {
-                        const movementDelta = this.calculateDistance(oldPosition, this.playerPosition);
-                        this.distanceTraveled += movementDelta;
-                        this.updateDistanceCounter();
+                    if (isValidStepTiming && isWalkingAcceleration && hasVerticalComponent && isPeakAcceleration) {
+                        // Add to step candidates for validation
+                        stepCandidates.push(currentTime);
+                        stepCandidates = stepCandidates.filter(time => currentTime - time < 3000); // Keep last 3 seconds
                         
-                        if (this.distanceTraveled >= this.minMovementDistance) {
-                            this.spawnNextAI();
+                        // Require consistent pattern (at least 2 steps in 3 seconds)
+                        if (stepCandidates.length >= 2) {
+                            this.stepCount++;
+                            this.lastStepTime = currentTime;
+                            
+                            if (this.waitingForMovement) {
+                                this.distanceTraveled = this.stepCount * 0.7;
+                                this.updateDistanceCounter();
+                                
+                                if (this.distanceTraveled >= this.minMovementDistance) {
+                                    this.stepCount = 0;
+                                    this.spawnNextAI();
+                                }
+                            }
                         }
                     }
                     
-                    lastTime = currentTime;
+                    lastAccel = totalAccel;
                 }
             });
         }
@@ -419,10 +431,10 @@ class AIHunterGame {
         while (angleDiff < -180) angleDiff += 360;
         
         const arrowAngle = (angleDiff * Math.PI) / 180;
-        const radius = Math.min(this.canvas.width, this.canvas.height) * 0.35;
+        const radius = Math.min(this.canvas.width, this.canvas.height) * 0.3;
         
         const arrowX = this.frameCenter.x + Math.sin(arrowAngle) * radius;
-        const arrowY = this.frameCenter.y - Math.cos(arrowAngle) * radius * 0.5;
+        const arrowY = this.frameCenter.y - Math.cos(arrowAngle) * radius;
         
         this.ctx.save();
         this.ctx.translate(arrowX, arrowY);
@@ -525,44 +537,12 @@ class AIHunterGame {
         
         this.currentAI = uncaught[Math.floor(Math.random() * uncaught.length)];
         
-        const positions = [
-            { type: 'ceiling', pitch: -45, angle: 'random', hint: { en: 'LOOK UP', ja: '上を見て' } },
-            { type: 'floor', pitch: 45, angle: 'random', hint: { en: 'LOOK DOWN', ja: '下を見て' } },
-            { type: 'left', pitch: 0, angle: 'left', hint: { en: 'TURN LEFT', ja: '左を向いて' } },
-            { type: 'right', pitch: 0, angle: 'right', hint: { en: 'TURN RIGHT', ja: '右を向いて' } },
-            { type: 'behind', pitch: 0, angle: 'behind', hint: { en: 'TURN AROUND', ja: '振り返って' } },
-            { type: 'up_left', pitch: -30, angle: 'left', hint: { en: 'LOOK UP LEFT', ja: '左上を見て' } },
-            { type: 'up_right', pitch: -30, angle: 'right', hint: { en: 'LOOK UP RIGHT', ja: '右上を見て' } },
-            { type: 'down_left', pitch: 30, angle: 'left', hint: { en: 'LOOK DOWN LEFT', ja: '左下を見て' } }
-        ];
-        
-        const position = positions[Math.floor(Math.random() * positions.length)];
-        
-        const baseAngle = Math.random() * 360 - 180;
-        switch(position.angle) {
-            case 'random':
-                this.aiAngle = baseAngle;
-                break;
-            case 'behind':
-                this.aiAngle = baseAngle + 180;
-                break;
-            case 'left':
-                this.aiAngle = baseAngle - 90;
-                break;
-            case 'right':
-                this.aiAngle = baseAngle + 90;
-                break;
-        }
-        
-        while (this.aiAngle > 180) this.aiAngle -= 360;
-        while (this.aiAngle < -180) this.aiAngle += 360;
-        
-        this.aiPitch = position.pitch + (Math.random() - 0.5) * 15;
+        // Random positioning
+        this.aiAngle = Math.random() * 360 - 180;
+        this.aiPitch = (Math.random() - 0.5) * 120;
         this.aiPitch = Math.max(-60, Math.min(60, this.aiPitch));
         
-        this.currentAI.positionHint = position.hint[this.language];
-        
-        this.showSpawnNotification(position.hint[this.language]);
+        this.showSpawnNotification();
         this.updateTargetIndicator();
     }
 
@@ -723,56 +703,63 @@ class AIHunterGame {
         if (hint) hint.remove();
     }
     
-    showSpawnNotification(hint = null) {
-        if (!hint) {
-            hint = this.language === 'ja' ? '新しいターゲットが検出されました！' : 'NEW TARGET DETECTED!';
-        }
+    showSpawnNotification() {
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 51, 102, 0.9);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid rgba(255, 51, 102, 0.8);
             color: white;
             padding: 12px 24px;
             border-radius: 8px;
             font-family: 'Orbitron', sans-serif;
-            font-size: 11px;
+            font-size: 12px;
+            font-weight: bold;
             letter-spacing: 1px;
             z-index: 1000;
             animation: slideDown 0.3s ease;
             text-align: center;
             max-width: 280px;
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.5);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         `;
         const targetText = this.language === 'ja' ? 'ターゲット発見' : 'TARGET DETECTED';
-        notification.innerHTML = `<div style="margin-bottom: 4px;">🎯 ${targetText}</div><div style="font-size: 10px; opacity: 0.8;">${hint}</div>`;
+        notification.innerHTML = `<div style="color: #ff3366;">🎯 ${targetText}</div><div style="font-size: 11px; color: #00f0ff; margin-top: 4px;">${this.currentAI.name}</div>`;
         document.body.appendChild(notification);
         
-        setTimeout(() => notification.remove(), 5000);
+        setTimeout(() => notification.remove(), 4000);
     }
     
     startMovementPhase() {
-        setTimeout(() => {
-            this.waitingForMovement = true;
-            this.distanceTraveled = 0;
-            this.lastCapturePosition = { ...this.playerPosition };
-            this.showDistanceCounter();
-        }, 10000);
+        if (!this.lastCapturedAI) {
+            this.spawnNextAI();
+            return;
+        }
+        
+        this.minMovementDistance = this.getMovementDistance(this.lastCapturedAI.rarity);
+        this.waitingForMovement = true;
+        this.distanceTraveled = 0;
+        this.stepCount = 0;
+        this.showDistanceCounter();
     }
     
     updateDistanceCounter() {
         const counter = document.getElementById('distance-counter');
         if (counter) {
             const remaining = Math.max(0, this.minMovementDistance - this.distanceTraveled);
-            const walkText = this.language === 'ja' ? '歩いて次のターゲットをアンロック' : 'WALK TO UNLOCK NEXT TARGET';
+            const walkText = this.language === 'ja' ? 
+                `${this.minMovementDistance.toFixed(0)}メートル歩いて次のターゲットをアンロック` : 
+                `WALK ${this.minMovementDistance.toFixed(0)} METERS TO UNLOCK NEXT TARGET`;
             const remainingText = this.language === 'ja' ? '残り' : 'remaining';
             
             counter.innerHTML = `
-                <div>${walkText}</div>
-                <div style="font-size: 18px; margin: 8px 0;">${remaining.toFixed(1)}m ${remainingText}</div>
-                <div style="width: 200px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; margin: 0 auto;">
-                    <div style="width: ${Math.min(100, (this.distanceTraveled / this.minMovementDistance) * 100)}%; height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.3s;"></div>
+                <div style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${walkText}</div>
+                <div style="font-size: 18px; margin: 8px 0; color: #00f0ff; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${remaining.toFixed(1)}m ${remainingText}</div>
+                <div style="width: 200px; height: 10px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; margin: 0 auto;">
+                    <div style="width: ${Math.min(100, (this.distanceTraveled / this.minMovementDistance) * 100)}%; height: 100%; background: linear-gradient(90deg, #00f0ff, #10b981); border-radius: 4px; transition: width 0.3s; box-shadow: 0 0 10px rgba(0,240,255,0.5);"></div>
                 </div>
             `;
         }
@@ -786,16 +773,19 @@ class AIHunterGame {
             bottom: 200px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 240, 255, 0.1);
-            border: 2px solid var(--primary);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00f0ff;
             border-radius: 12px;
             padding: 16px;
             font-family: 'Orbitron', sans-serif;
             font-size: 12px;
-            color: var(--primary);
+            font-weight: bold;
+            color: white;
             letter-spacing: 1px;
             text-align: center;
             z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+            backdrop-filter: blur(10px);
         `;
         document.body.appendChild(counter);
         this.updateDistanceCounter();
@@ -837,8 +827,28 @@ class AIHunterGame {
                 max-width: 400px;
                 color: white;
                 font-family: 'Orbitron', sans-serif;
+                position: relative;
             ">
-                <div style="font-size: 80px; margin-bottom: 20px;">${lastCaptured.emoji || '🤖'}</div>>
+                <button id="close-info-btn" style="
+                    position: absolute;
+                    top: 15px;
+                    right: 15px;
+                    width: 30px;
+                    height: 30px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    border-radius: 50%;
+                    color: white;
+                    font-size: 16px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                    ×
+                </button>
+                <div style="font-size: 80px; margin-bottom: 20px;">${lastCaptured.emoji || '🤖'}</div>
                 <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 1.5rem;">${lastCaptured.name}</h3>
                 <p style="line-height: 1.6; font-size: 14px; color: rgba(255,255,255,0.8);">${lastCaptured.info[this.language]}</p>
             </div>
@@ -846,10 +856,22 @@ class AIHunterGame {
         
         document.body.appendChild(infoModal);
         
-        setTimeout(() => {
+        // Add close button functionality
+        const closeBtn = document.getElementById('close-info-btn');
+        const closeModal = () => {
             infoModal.remove();
             this.startMovementPhase();
-        }, 13000);
+        };
+        
+        closeBtn.addEventListener('click', closeModal);
+        
+        // Auto-close after 13 seconds
+        const autoCloseTimer = setTimeout(closeModal, 13000);
+        
+        // Clear timer if manually closed
+        closeBtn.addEventListener('click', () => {
+            clearTimeout(autoCloseTimer);
+        });
     }
     
 
@@ -859,7 +881,7 @@ class AIHunterGame {
             en: {
                 title: 'AI HUNTER',
                 tagline: 'Locate. Target. Capture.',
-                nameLabel: 'HUNTER ID',
+                nameLabel: 'HUNTER NAME',
                 orgLabel: 'ORGANIZATION',
                 startBtn: 'INITIALIZE',
                 infoText: 'Please enter correct name and organization',
@@ -873,13 +895,13 @@ class AIHunterGame {
                 collection: 'COLLECTION',
                 captured: 'CAPTURED',
                 continue: 'CONTINUE',
-                walkToUnlock: 'WALK TO UNLOCK NEXT TARGET',
+                walkToUnlock: 'WALK 1 METER TO UNLOCK NEXT TARGET',
                 remaining: 'remaining'
             },
             ja: {
                 title: 'AI ハンター',
                 tagline: '発見。狙い。捕獲。',
-                nameLabel: 'ハンターID',
+                nameLabel: 'ハンター名',
                 orgLabel: '組織',
                 startBtn: '開始',
                 infoText: '正しい名前と組織を入力してください',
@@ -893,7 +915,7 @@ class AIHunterGame {
                 collection: 'コレクション',
                 captured: '捕獲成功',
                 continue: '続ける',
-                walkToUnlock: '歩いて次のターゲットをアンロック',
+                walkToUnlock: '1メートル歩いて次のターゲットをアンロック',
                 remaining: '残り'
             }
         };
@@ -1050,12 +1072,17 @@ class AIHunterGame {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
     
-    calculateDistance(pos1, pos2) {
-        const dx = pos1.x - pos2.x;
-        const dy = pos1.y - pos2.y;
-        const dz = pos1.z - pos2.z;
-        return Math.sqrt(dx*dx + dy*dy + dz*dz);
+    getMovementDistance(rarity) {
+        switch(rarity) {
+            case 'common': return 1 + Math.random();
+            case 'rare': return 2 + Math.random();
+            case 'epic': return 3 + Math.random();
+            case 'legendary': return 3 + Math.random();
+            default: return 2;
+        }
     }
+    
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
