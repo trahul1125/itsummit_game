@@ -7,7 +7,7 @@ class AIHunterGame {
         this.userStats = { totalCaptured: 0, totalModels: 15 };
         
         this.aiModels = [
-            { name: 'GPT', emoji: '🤖', caught: false, rarity: 'legendary', info: { en: 'GPT-4 is OpenAI\'s most advanced language model, capable of understanding and generating human-like text with remarkable accuracy and creativity.', ja: 'GPT-4はOpenAIの最も高度な言語モデルで、驚くべき精度と創造性で人間のようなテキストを理解し生成することができます。' } },
+            { name: 'GPT-4', emoji: '🤖', caught: false, rarity: 'legendary', info: { en: 'GPT-4 is OpenAI\'s most advanced language model, capable of understanding and generating human-like text with remarkable accuracy and creativity.', ja: 'GPT-4はOpenAIの最も高度な言語モデルで、驚くべき精度と創造性で人間のようなテキストを理解し生成することができます。' } },
             { name: 'Claude', emoji: '🧠', caught: false, rarity: 'legendary', info: { en: 'Claude is Anthropic\'s AI assistant focused on being helpful, harmless, and honest through constitutional AI training methods.', ja: 'ClaudeはAnthropicのAIアシスタントで、憲法的AI訓練方法により、有用で無害で正直であることに焦点を当てています。' } },
             { name: 'Gemini', emoji: '💎', caught: false, rarity: 'epic', info: { en: 'Gemini is Google\'s multimodal AI model that can understand and process text, images, audio, and video simultaneously.', ja: 'GeminiはGoogleのマルチモーダルAIモデルで、テキスト、画像、音声、動画を同時に理解し処理することができます。' } },
             { name: 'LLaMA', emoji: '🦙', caught: false, rarity: 'epic', info: { en: 'LLaMA (Large Language Model Meta AI) is Meta\'s foundation language model designed for research and commercial applications.', ja: 'LLaMA（Large Language Model Meta AI）は、研究および商用アプリケーション向けに設計されたMetaの基盤言語モデルです。' } },
@@ -253,20 +253,23 @@ class AIHunterGame {
                     });
                     if (this.movementBuffer.length > 20) this.movementBuffer.shift();
                     
-                    // Step detection with moderate validation
+                    // Stricter step detection to prevent phone shaking
                     const timeSinceLastStep = currentTime - this.lastStepTime;
-                    const isValidStepTiming = timeSinceLastStep > 500; // Prevent rapid hand movements
-                    const isWalkingAcceleration = totalAccel > 5 && totalAccel < 25; // Walking range
-                    const hasVerticalComponent = yAccel > 2; // Walking has vertical bounce
+                    const isValidStepTiming = timeSinceLastStep > 800; // Longer interval
+                    const isWalkingAcceleration = totalAccel > 8 && totalAccel < 20; // Narrower range
+                    const hasVerticalComponent = yAccel > 3; // Higher threshold
                     const isPeakAcceleration = totalAccel > lastAccel;
                     
-                    if (isValidStepTiming && isWalkingAcceleration && hasVerticalComponent && isPeakAcceleration) {
-                        // Add to step candidates for validation
+                    // Check for consistent walking pattern
+                    const avgAccel = this.movementBuffer.reduce((sum, m) => sum + m.accel, 0) / this.movementBuffer.length;
+                    const isConsistentMovement = Math.abs(totalAccel - avgAccel) < 5;
+                    
+                    if (isValidStepTiming && isWalkingAcceleration && hasVerticalComponent && isPeakAcceleration && isConsistentMovement) {
                         stepCandidates.push(currentTime);
-                        stepCandidates = stepCandidates.filter(time => currentTime - time < 3000); // Keep last 3 seconds
+                        stepCandidates = stepCandidates.filter(time => currentTime - time < 5000);
                         
-                        // Require consistent pattern (at least 2 steps in 3 seconds)
-                        if (stepCandidates.length >= 2) {
+                        // Require more steps for validation
+                        if (stepCandidates.length >= 3) {
                             this.stepCount++;
                             this.lastStepTime = currentTime;
                             
@@ -748,6 +751,11 @@ class AIHunterGame {
     }
     
     startMovementPhase() {
+        const uncaught = this.aiModels.filter(ai => !ai.caught);
+        if (uncaught.length === 0) {
+            return;
+        }
+        
         if (!this.lastCapturedAI) {
             this.spawnNextAI();
             return;
@@ -1022,6 +1030,7 @@ class AIHunterGame {
     }
     
     saveScore(gameTime, captured) {
+        console.log('Saving score:', { gameTime, captured, name: this.user.name });
         this.saveScoreToFile(gameTime, captured);
     }
     
@@ -1044,6 +1053,7 @@ class AIHunterGame {
         let scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
         scores.push(score);
         localStorage.setItem('aiHunterScores', JSON.stringify(scores));
+        console.log('Score stored. Total scores:', scores.length);
     }
     
     showRank(currentScore) {
@@ -1165,4 +1175,3 @@ class AIHunterGame {
 document.addEventListener('DOMContentLoaded', () => {
     window.gameInstance = new AIHunterGame();
 });
-
