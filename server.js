@@ -17,8 +17,8 @@ app.post('/api/scores', async (req, res) => {
   const rank = captured === totalModels ? 1 : Math.floor(Math.random() * 100) + 1
   
   const result = await sql`
-    INSERT INTO "Leaderboard" ("id","Name", Organization, Time, "Rank")
-    VALUES (${id}, ${name}, ${organization}, ${gameTime}, ${rank})
+    INSERT INTO "Leaderboard" ("Name", organization, time, "rank")
+    VALUES (${name}, ${organization}, ${gameTime}, ${rank})
     RETURNING *
   `
   
