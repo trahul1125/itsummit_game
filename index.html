@@ -48,7 +48,7 @@
             
             <form id="user-form">
                 <div class="form-group">
-                    <label for="name">HUNTER ID</label>
+                    <label for="name">HUNTER NAME</label>
                     <input type="text" id="name" placeholder="Enter your name" required>
                 </div>
                 
@@ -63,9 +63,7 @@
                 </button>
             </form>
             
-            <button id="scoreboard-btn" class="scoreboard-btn">
-                <span>🏆 SCOREBOARD</span>
-            </button>
+
         </div>
 
         <div id="game-page" class="page">
@@ -170,12 +168,47 @@
             <div class="inv-header">
                 <button id="back-from-scoreboard" class="back-btn"></button>
                 <h2>🏆 SCOREBOARD</h2>
-                <div class="inv-stats"></div>
+                <div class="inv-stats">
+                    <button id="refresh-scores" style="
+                        background: rgba(0, 240, 255, 0.1);
+                        border: 1px solid var(--primary);
+                        border-radius: 6px;
+                        color: var(--primary);
+                        padding: 4px 8px;
+                        font-size: 12px;
+                        cursor: pointer;
+                        font-family: 'Orbitron', sans-serif;
+                    ">🔄 REFRESH</button>
+                </div>
             </div>
             <div id="scoreboard-grid"></div>
         </div>
     </div>
 
+    <script src="gist-leaderboard.js"></script>
+    <script>
+        // Global game instance for refresh functionality
+        let gameInstance = null;
+        
+        // Add refresh functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const refreshBtn = document.getElementById('refresh-scores');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', async () => {
+                    refreshBtn.textContent = '⏳ LOADING...';
+                    try {
+                        const scores = await window.gistLeaderboard.loadScores();
+                        if (gameInstance) {
+                            gameInstance.updateScoreboardDisplay(scores);
+                        }
+                    } catch (error) {
+                        console.error('Failed to refresh scores:', error);
+                    }
+                    refreshBtn.textContent = '🔄 REFRESH';
+                });
+            }
+        });
+    </script>
     <script src="game.js"></script>
 </body>
 </html>
