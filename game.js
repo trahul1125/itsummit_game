@@ -57,10 +57,10 @@ class AIHunterGame {
         this.initialBeta = null;
         this.initialGamma = null;
         this.motionSupported = false;
-        this.database = new GameDatabase();
-        this.api = new GameAPI();
-        // Backend deployed on Railway
-        this.api.enableAPI('https://itsummitgame-production.up.railway.app');
+        // Temporarily disable database integration
+        // this.database = new GameDatabase();
+        // this.api = new GameAPI();
+        // this.api.enableAPI('https://itsummitgame-production.up.railway.app');
         
         this.init();
     }
@@ -1021,32 +1021,19 @@ class AIHunterGame {
             completionRate: (captured / this.aiModels.length) * 100
         };
         
-        // Save to localStorage (fallback)
-        this.database.saveScore(scoreData);
-        
-        // Try to save to PostgreSQL
-        try {
-            await this.api.saveScore(scoreData);
-            console.log('Score saved to PostgreSQL');
-        } catch (error) {
-            console.log('PostgreSQL save failed, using localStorage:', error);
-        }
+        // Temporarily use simple localStorage
+        let scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
+        scores.push(scoreData);
+        localStorage.setItem('aiHunterScores', JSON.stringify(scores));
+        console.log('Score saved to localStorage');}
     }
     
     async showScoreboard() {
         this.showPage('scoreboard-page');
         
-        try {
-            // Try to load from PostgreSQL first
-            const scores = await this.api.getScores();
-            console.log('Loaded scores from PostgreSQL:', scores);
-            this.updateScoreboardDisplay(scores);
-        } catch (error) {
-            // Fallback to localStorage
-            console.log('PostgreSQL load failed, using localStorage:', error);
-            const scores = this.database.getTopScores(20);
-            this.updateScoreboardDisplay(scores);
-        }
+        // Temporarily use simple localStorage
+        const scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
+        this.updateScoreboardDisplay(scores);
     }
     
     updateScoreboardDisplay(scores) {
