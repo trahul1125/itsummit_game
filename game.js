@@ -67,6 +67,20 @@ class AIHunterGame {
         this.updateProgress();
         this.updateUserStats();
         this.updateLanguage();
+        this.setupLeaderboardAccess();
+    }
+    
+    setupLeaderboardAccess() {
+        let keySequence = [];
+        document.addEventListener('keydown', (e) => {
+            keySequence.push(e.key.toLowerCase());
+            if (keySequence.length > 5) keySequence.shift();
+            
+            if (keySequence.join('') === 'admin') {
+                this.showLeaderboard();
+                keySequence = [];
+            }
+        });
     }
 
     setupEventListeners() {
@@ -1022,28 +1036,105 @@ class AIHunterGame {
             timestamp: Date.now()
         };
         
-        // Create downloadable file
-        const scoreText = `AI Hunter Score - ${score.date}\n` +
-            `Player: ${score.name}\n` +
-            `Organization: ${score.organization}\n` +
-            `Captured: ${score.captured}/${score.totalModels} AI models\n` +
-            `Time: ${gameTime >= this.gameTimeLimit ? 'TIME UP (10:00)' : this.formatTime(gameTime)}\n` +
-            `Score: ${this.calculateScore(gameTime, captured)}\n` +
-            `Timestamp: ${new Date().toISOString()}\n` +
-            `\n--- Raw Data ---\n` +
-            JSON.stringify(score, null, 2);
+        this.storeScore(score);
+        this.showRank(score);
+    }
+    
+    storeScore(score) {
+        let scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
+        scores.push(score);
+        localStorage.setItem('aiHunterScores', JSON.stringify(scores));
+    }
+    
+    showRank(currentScore) {
+        const scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
+        const sorted = scores.sort((a, b) => {
+            if (b.captured !== a.captured) return b.captured - a.captured;
+            return a.gameTime - b.gameTime;
+        });
         
-        const blob = new Blob([scoreText], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ai-hunter-score-${score.name.replace(/\s+/g, '-')}-${Date.now()}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const rank = sorted.findIndex(s => s.timestamp === currentScore.timestamp) + 1;
+        const total = sorted.length;
         
-        console.log('Score saved:', score);
+        const rankModal = document.createElement('div');
+        rankModal.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: flex; align-items: center; justify-content: center; z-index: 1001;
+        `;
+        
+        const rankEmoji = rank === 1 ? '🏆' : rank <= 3 ? '🥉' : rank <= 10 ? '🎯' : '📊';
+        
+        rankModal.innerHTML = `
+            <div style="
+                background: linear-gradient(135deg, #1a1a2e, #16213e);
+                border: 2px solid var(--primary); border-radius: 16px; padding: 30px;
+                text-align: center; color: white; font-family: 'Orbitron', sans-serif;
+            ">
+                <div style="font-size: 60px; margin-bottom: 15px;">${rankEmoji}</div>
+                <h3 style="color: var(--primary); margin-bottom: 10px;">YOUR RANK</h3>
+                <div style="font-size: 2rem; font-weight: bold; color: var(--success); margin-bottom: 10px;">#${rank}</div>
+                <div style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">out of ${total} players</div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    padding: 12px 24px; background: var(--primary); border: none;
+                    border-radius: 8px; color: white; cursor: pointer;
+                ">CONTINUE</button>
+            </div>
+        `;
+        
+        document.body.appendChild(rankModal);
+        setTimeout(() => rankModal.remove(), 10000);
+    }
+    
+    showLeaderboard() {
+        const scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
+        const sorted = scores.sort((a, b) => {
+            if (b.captured !== a.captured) return b.captured - a.captured;
+            return a.gameTime - b.gameTime;
+        });
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+            display: flex; align-items: center; justify-content: center; z-index: 1001;
+            padding: 20px; overflow-y: auto;
+        `;
+        
+        const top10 = sorted.slice(0, 10).map((s, i) => {
+            const rankEmoji = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+            const timeText = s.gameTime >= 600000 ? 'TIME UP' : this.formatTime(s.gameTime);
+            return `
+                <div style="display: flex; align-items: center; gap: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px;">
+                    <div style="font-size: 1.2rem; min-width: 50px; text-align: center; color: var(--primary);">${rankEmoji}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; color: white;">${s.name}</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">${s.organization}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--success); font-weight: bold;">${s.captured}/${s.totalModels}</div>
+                        <div style="font-size: 0.8rem; color: var(--primary);">${timeText}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        modal.innerHTML = `
+            <div style="
+                background: linear-gradient(135deg, #1a1a2e, #16213e);
+                border: 2px solid var(--primary); border-radius: 16px; padding: 30px;
+                max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto;
+                font-family: 'Orbitron', sans-serif; color: white;
+            ">
+                <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">🏆 TOP 10 HUNTERS</h2>
+                <div style="margin-bottom: 20px;">${top10 || '<div style="text-align: center; color: rgba(255,255,255,0.5);">No scores yet</div>'}</div>
+                <div style="text-align: center; font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 15px;">Total Players: ${sorted.length}</div>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    width: 100%; padding: 12px; background: var(--primary); border: none;
+                    border-radius: 8px; color: white; cursor: pointer; font-family: 'Orbitron', sans-serif;
+                ">CLOSE</button>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
     }
     
     calculateScore(gameTime, captured) {
