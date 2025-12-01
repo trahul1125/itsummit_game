@@ -3,12 +3,15 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const connectionString = process.env.DATABASE_URL
-const sql = postgres(connectionString, {
-  ssl: 'require',
-  connection: {
-    options: '--search_path=public'
-  }
+// Parse connection string manually to avoid IPv6 issues
+const url = new URL(process.env.DATABASE_URL)
+const sql = postgres({
+  host: url.hostname,
+  port: url.port,
+  database: url.pathname.slice(1),
+  username: url.username,
+  password: url.password,
+  ssl: 'require'
 })
 
 export default sql
