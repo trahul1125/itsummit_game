@@ -57,6 +57,10 @@ class AIHunterGame {
         this.initialBeta = null;
         this.initialGamma = null;
         this.motionSupported = false;
+        this.database = new GameDatabase();
+        this.api = new GameAPI();
+        // Backend deployed on Railway
+        this.api.enableAPI('https://itsummitgame-production.up.railway.app');
         
         this.init();
     }
@@ -1007,31 +1011,42 @@ class AIHunterGame {
         return emojiMap[name] || '🤖';
     }
     
-    saveScore(gameTime, captured) {
-        const score = {
+    async saveScore(gameTime, captured) {
+        const scoreData = {
             name: this.user.name,
             organization: this.user.organization,
             captured: captured,
             totalModels: this.aiModels.length,
             gameTime: gameTime,
-            completionRate: (captured / this.aiModels.length) * 100,
-            timestamp: Date.now(),
-            date: new Date().toLocaleDateString()
+            completionRate: (captured / this.aiModels.length) * 100
         };
         
-        let scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
-        scores.push(score);
-        scores.sort((a, b) => {
-            if (b.captured !== a.captured) return b.captured - a.captured;
-            return a.gameTime - b.gameTime;
-        });
-        localStorage.setItem('aiHunterScores', JSON.stringify(scores));
+        // Save to localStorage (fallback)
+        this.database.saveScore(scoreData);
+        
+        // Try to save to PostgreSQL
+        try {
+            await this.api.saveScore(scoreData);
+            console.log('Score saved to PostgreSQL');
+        } catch (error) {
+            console.log('PostgreSQL save failed, using localStorage:', error);
+        }
     }
     
-    showScoreboard() {
-        const scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
+    async showScoreboard() {
         this.showPage('scoreboard-page');
-        this.updateScoreboardDisplay(scores);
+        
+        try {
+            // Try to load from PostgreSQL first
+            const scores = await this.api.getScores();
+            console.log('Loaded scores from PostgreSQL:', scores);
+            this.updateScoreboardDisplay(scores);
+        } catch (error) {
+            // Fallback to localStorage
+            console.log('PostgreSQL load failed, using localStorage:', error);
+            const scores = this.database.getTopScores(20);
+            this.updateScoreboardDisplay(scores);
+        }
     }
     
     updateScoreboardDisplay(scores) {
@@ -1088,3 +1103,4 @@ class AIHunterGame {
 document.addEventListener('DOMContentLoaded', () => {
     new AIHunterGame();
 });
+
