@@ -593,6 +593,20 @@ class AIHunterGame {
     
     async saveToJsonBin(gameTime) {
         try {
+            // First get existing data
+            const getResponse = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee/latest', {
+                headers: {
+                    'X-Master-Key': '$2a$10$hl8RiwmuMk16Yo4UDtezcedlmX9w4GFAsPSAn14g1LFhphVHJVnhC'
+                }
+            });
+            
+            let existingData = { completions: [] };
+            if (getResponse.ok) {
+                const result = await getResponse.json();
+                existingData = result.record || { completions: [] };
+            }
+            
+            // Add new completion
             const completion = {
                 name: this.user.name,
                 organization: this.user.organization,
@@ -601,15 +615,16 @@ class AIHunterGame {
                 timestamp: Date.now()
             };
             
+            existingData.completions.push(completion);
+            
+            // Save updated data
             const response = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Master-Key': '$2a$10$hl8RiwmuMk16Yo4UDtezcedlmX9w4GFAsPSAn14g1LFhphVHJVnhC'
                 },
-                body: JSON.stringify({
-                    completions: [completion]
-                })
+                body: JSON.stringify(existingData)
             });
             
             if (response.ok) {
