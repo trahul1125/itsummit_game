@@ -67,21 +67,10 @@ class AIHunterGame {
         this.updateProgress();
         this.updateUserStats();
         this.updateLanguage();
-        this.setupLeaderboardAccess();
+
     }
     
-    setupLeaderboardAccess() {
-        let keySequence = [];
-        document.addEventListener('keydown', (e) => {
-            keySequence.push(e.key.toLowerCase());
-            if (keySequence.length > 5) keySequence.shift();
-            
-            if (keySequence.join('') === 'admin') {
-                this.showLeaderboard();
-                keySequence = [];
-            }
-        });
-    }
+
 
     setupEventListeners() {
         document.getElementById('language-select').addEventListener('change', (e) => {
@@ -569,14 +558,9 @@ class AIHunterGame {
         const captured = this.currentAI;
         captured.caught = true;
         this.userStats.totalCaptured++;
-        this.lastCapturedAI = captured; // Store for info display
+        this.lastCapturedAI = captured;
         
         const capturedImg = document.getElementById('captured-icon');
-        const emojiMap = {
-            'GPT-4': '🤖', 'Claude': '🧠', 'Gemini': '💎', 'LLaMA': '🦙', 'PaLM': '🌴',
-            'BERT': '📚', 'T5': '🔄', 'GPT-3': '⚡', 'Mistral': '🌪️', 'Falcon': '🦅',
-            'Rufus': '🛍️', 'Copilot': '💻', 'Bard': '🎭', 'ChatGPT': '💬', 'Alexa': '🔊'
-        };
         capturedImg.innerHTML = `<div style="font-size: 60px;">${captured.emoji || '🤖'}</div>`;
         
         document.getElementById('capture-message').textContent = 
@@ -594,14 +578,45 @@ class AIHunterGame {
         this.updateUserStats();
         this.showModal('success-modal');
     }
-
-    gameComplete() {
+    
+    async gameComplete() {
         const gameTime = Date.now() - this.gameStartTime;
-        this.saveScore(gameTime, this.userStats.totalCaptured);
+        await this.saveToJsonBin(gameTime);
         document.getElementById('complete-message').textContent = 
             `Congratulations ${this.user.name}! You've captured all ${this.aiModels.length} AI models!`;
         this.showModal('complete-modal');
     }
+    
+    async saveToJsonBin(gameTime) {
+        try {
+            const completion = {
+                name: this.user.name,
+                organization: this.user.organization,
+                gameTime: gameTime,
+                date: new Date().toISOString(),
+                timestamp: Date.now()
+            };
+            
+            const response = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': '$2a$10$hl8RiwmuMk16Yo4UDtezcedlmX9w4GFAsPSAn14g1LFhphVHJVnhC'
+                },
+                body: JSON.stringify({
+                    completions: [completion]
+                })
+            });
+            
+            if (response.ok) {
+                console.log('Completion saved to JSONBin');
+            }
+        } catch (error) {
+            console.log('Save failed:', error);
+        }
+    }
+
+
 
     updateProgress() {
         const caught = this.aiModels.filter(ai => ai.caught).length;
@@ -1029,43 +1044,27 @@ class AIHunterGame {
         return emojiMap[name] || '🤖';
     }
     
-    saveScore(gameTime, captured) {
-        console.log('Saving score:', { gameTime, captured, name: this.user.name });
-        this.saveScoreToFile(gameTime, captured);
+    async saveToExcel(gameTime) {
+        try {
+            const response = await fetch('/api/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: this.user.name,
+                    organization: this.user.organization,
+                    gameTime: gameTime
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                this.showExcelRank(result.rank);
+            }
+        } catch (error) {
+            console.log('Excel save failed:', error);
+        }
     }
     
-    saveScoreToFile(gameTime, captured) {
-        const score = {
-            name: this.user.name,
-            organization: this.user.organization,
-            captured: captured,
-            totalModels: this.aiModels.length,
-            gameTime: gameTime,
-            date: new Date().toLocaleDateString(),
-            timestamp: Date.now()
-        };
-        
-        this.storeScore(score);
-        this.showRank(score);
-    }
-    
-    storeScore(score) {
-        let scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
-        scores.push(score);
-        localStorage.setItem('aiHunterScores', JSON.stringify(scores));
-        console.log('Score stored. Total scores:', scores.length);
-    }
-    
-    showRank(currentScore) {
-        const scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
-        const sorted = scores.sort((a, b) => {
-            if (b.captured !== a.captured) return b.captured - a.captured;
-            return a.gameTime - b.gameTime;
-        });
-        
-        const rank = sorted.findIndex(s => s.timestamp === currentScore.timestamp) + 1;
-        const total = sorted.length;
-        
+    showExcelRank(rank) {
         const rankModal = document.createElement('div');
         rankModal.style.cssText = `
             position: fixed; inset: 0; background: rgba(0,0,0,0.9);
@@ -1081,9 +1080,9 @@ class AIHunterGame {
                 text-align: center; color: white; font-family: 'Orbitron', sans-serif;
             ">
                 <div style="font-size: 60px; margin-bottom: 15px;">${rankEmoji}</div>
-                <h3 style="color: var(--primary); margin-bottom: 10px;">YOUR RANK</h3>
+                <h3 style="color: var(--primary); margin-bottom: 10px;">GLOBAL RANK</h3>
                 <div style="font-size: 2rem; font-weight: bold; color: var(--success); margin-bottom: 10px;">#${rank}</div>
-                <div style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">out of ${total} players</div>
+                <div style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">Saved to Excel Leaderboard!</div>
                 <button onclick="this.parentElement.parentElement.remove()" style="
                     padding: 12px 24px; background: var(--primary); border: none;
                     border-radius: 8px; color: white; cursor: pointer;
@@ -1095,57 +1094,7 @@ class AIHunterGame {
         setTimeout(() => rankModal.remove(), 10000);
     }
     
-    showLeaderboard() {
-        const scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
-        const sorted = scores.sort((a, b) => {
-            if (b.captured !== a.captured) return b.captured - a.captured;
-            return a.gameTime - b.gameTime;
-        });
-        
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
-            display: flex; align-items: center; justify-content: center; z-index: 1001;
-            padding: 20px; overflow-y: auto;
-        `;
-        
-        const top10 = sorted.slice(0, 10).map((s, i) => {
-            const rankEmoji = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
-            const timeText = s.gameTime >= 600000 ? 'TIME UP' : this.formatTime(s.gameTime);
-            return `
-                <div style="display: flex; align-items: center; gap: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px;">
-                    <div style="font-size: 1.2rem; min-width: 50px; text-align: center; color: var(--primary);">${rankEmoji}</div>
-                    <div style="flex: 1;">
-                        <div style="font-weight: bold; color: white;">${s.name}</div>
-                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">${s.organization}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="color: var(--success); font-weight: bold;">${s.captured}/${s.totalModels}</div>
-                        <div style="font-size: 0.8rem; color: var(--primary);">${timeText}</div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        
-        modal.innerHTML = `
-            <div style="
-                background: linear-gradient(135deg, #1a1a2e, #16213e);
-                border: 2px solid var(--primary); border-radius: 16px; padding: 30px;
-                max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto;
-                font-family: 'Orbitron', sans-serif; color: white;
-            ">
-                <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">🏆 TOP 10 HUNTERS</h2>
-                <div style="margin-bottom: 20px;">${top10 || '<div style="text-align: center; color: rgba(255,255,255,0.5);">No scores yet</div>'}</div>
-                <div style="text-align: center; font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 15px;">Total Players: ${sorted.length}</div>
-                <button onclick="this.parentElement.parentElement.remove()" style="
-                    width: 100%; padding: 12px; background: var(--primary); border: none;
-                    border-radius: 8px; color: white; cursor: pointer; font-family: 'Orbitron', sans-serif;
-                ">CLOSE</button>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-    }
+
     
     calculateScore(gameTime, captured) {
         const baseScore = captured * 1000;
@@ -1170,6 +1119,37 @@ class AIHunterGame {
     }
     
 
+}
+
+async function testJsonBin() {
+    try {
+        const testData = {
+            name: 'Test Player',
+            organization: 'Test Org',
+            gameTime: 120000,
+            date: new Date().toISOString(),
+            timestamp: Date.now()
+        };
+        
+        const response = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': '$2a$10$hl8RiwmuMk16Yo4UDtezcedlmX9w4GFAsPSAn14g1LFhphVHJVnhC'
+            },
+            body: JSON.stringify({
+                completions: [testData]
+            })
+        });
+        
+        if (response.ok) {
+            alert('✅ JSONBin test successful! Check your bin.');
+        } else {
+            alert('❌ Test failed: ' + response.status);
+        }
+    } catch (error) {
+        alert('❌ Test error: ' + error.message);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
