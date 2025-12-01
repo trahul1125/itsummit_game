@@ -57,10 +57,6 @@ class AIHunterGame {
         this.initialBeta = null;
         this.initialGamma = null;
         this.motionSupported = false;
-        // Database integration
-        this.database = new GameDatabase();
-        this.api = new GameAPI();
-        this.api.enableAPI('https://itsummitgame-production.up.railway.app');
         
         this.init();
     }
@@ -115,13 +111,6 @@ class AIHunterGame {
         document.getElementById('scoreboard-game-btn').addEventListener('click', () => {
             this.showScoreboard();
         });
-        
-        // Add test DB button (temporary)
-        const testBtn = document.createElement('button');
-        testBtn.textContent = 'Test DB';
-        testBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 1000; padding: 8px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;';
-        testBtn.addEventListener('click', () => this.testDatabase());
-        document.body.appendChild(testBtn);
     }
 
     async startGame() {
@@ -164,11 +153,13 @@ class AIHunterGame {
             
         } catch (error) {
             console.error('Camera error:', error);
-            // Temporary bypass for testing
-            this.showPage('game-page');
-            this.setupMotionTracking();
-            this.startGameLoop();
-            this.spawnNextAI();
+            if (error.name === 'NotAllowedError') {
+                alert('Camera permission denied. Please allow camera access and refresh.');
+            } else if (error.name === 'NotFoundError') {
+                alert('No camera found. Please connect a camera.');
+            } else {
+                alert('Camera error: ' + error.message + '. Try using HTTPS or localhost.');
+            }
         }
     }
 
@@ -1022,34 +1013,18 @@ class AIHunterGame {
         return emojiMap[name] || '🤖';
     }
     
-    async saveScore(gameTime, captured) {
-        const scoreData = {
-            name: this.user.name,
-            organization: this.user.organization,
-            time: gameTime,
-            rank: captured
-        };
-        
-        try {
-            // Try to save to PostgreSQL database via API
-            await this.api.saveScore(scoreData);
-            console.log('Score saved to database');
-        } catch (error) {
-            console.error('Failed to save to database:', error);
-            // Fallback to localStorage
-            let scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
-            scores.push(scoreData);
-            localStorage.setItem('aiHunterScores', JSON.stringify(scores));
-            console.log('Score saved to localStorage as fallback');
+    saveScore(gameTime, captured) {
+        if (window.leaderboard) {
+            window.leaderboard.saveScore(gameTime, captured, this.user.name, this.user.organization);
         }
     }
     
     async showScoreboard() {
         this.showPage('scoreboard-page');
-        
-        // Temporarily use simple localStorage
-        const scores = JSON.parse(localStorage.getItem('aiHunterScores') || '[]');
-        this.updateScoreboardDisplay(scores);
+        if (window.leaderboard) {
+            const scores = await window.leaderboard.loadScores();
+            this.updateScoreboardDisplay(scores);
+        }
     }
     
     updateScoreboardDisplay(scores) {
@@ -1100,29 +1075,9 @@ class AIHunterGame {
         }
     }
     
-    async testDatabase() {
-        console.log('Testing database connectivity...');
-        try {
-            const testScore = {
-                name: 'Test User',
-                organization: 'Test Org',
-                time: 60000,
-                rank: 5
-            };
-            
-            await this.api.saveScore(testScore);
-            alert('✅ Database connection successful!');
-            console.log('Database test passed');
-        } catch (error) {
-            alert('❌ Database connection failed: ' + error.message);
-            console.error('Database test failed:', error);
-        }
-    }
-    
 
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new AIHunterGame();
+    window.gameInstance = new AIHunterGame();
 });
-
