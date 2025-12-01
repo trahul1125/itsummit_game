@@ -104,13 +104,7 @@ class AIHunterGame {
 
 
 
-        document.getElementById('back-from-scoreboard').addEventListener('click', () => {
-            this.showGame();
-        });
 
-        document.getElementById('scoreboard-game-btn').addEventListener('click', () => {
-            this.showScoreboard();
-        });
     }
 
     async startGame() {
@@ -1014,49 +1008,48 @@ class AIHunterGame {
     }
     
     saveScore(gameTime, captured) {
-        if (window.leaderboard) {
-            window.leaderboard.saveScore(gameTime, captured, this.user.name, this.user.organization);
-        }
+        this.saveScoreToFile(gameTime, captured);
     }
     
-    async showScoreboard() {
-        this.showPage('scoreboard-page');
-        if (window.leaderboard) {
-            const scores = await window.leaderboard.loadScores();
-            this.updateScoreboardDisplay(scores);
-        }
+    saveScoreToFile(gameTime, captured) {
+        const score = {
+            name: this.user.name,
+            organization: this.user.organization,
+            captured: captured,
+            totalModels: this.aiModels.length,
+            gameTime: gameTime,
+            date: new Date().toLocaleDateString(),
+            timestamp: Date.now()
+        };
+        
+        // Create downloadable file
+        const scoreText = `AI Hunter Score - ${score.date}\n` +
+            `Player: ${score.name}\n` +
+            `Organization: ${score.organization}\n` +
+            `Captured: ${score.captured}/${score.totalModels} AI models\n` +
+            `Time: ${gameTime >= this.gameTimeLimit ? 'TIME UP (10:00)' : this.formatTime(gameTime)}\n` +
+            `Score: ${this.calculateScore(gameTime, captured)}\n` +
+            `Timestamp: ${new Date().toISOString()}\n` +
+            `\n--- Raw Data ---\n` +
+            JSON.stringify(score, null, 2);
+        
+        const blob = new Blob([scoreText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ai-hunter-score-${score.name.replace(/\s+/g, '-')}-${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log('Score saved:', score);
     }
     
-    updateScoreboardDisplay(scores) {
-        const grid = document.getElementById('scoreboard-grid');
-        grid.innerHTML = '';
-        
-        if (scores.length === 0) {
-            grid.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 40px;">No scores yet!</div>';
-            return;
-        }
-        
-        scores.slice(0, 20).forEach((score, index) => {
-            const item = document.createElement('div');
-            item.className = 'scoreboard-item';
-            
-            const rankEmoji = index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
-            const timeText = score.gameTime >= this.gameTimeLimit ? 'TIME UP' : this.formatTime(score.gameTime);
-            
-            item.innerHTML = `
-                <div class="rank">${rankEmoji}</div>
-                <div class="player-info">
-                    <div class="name">${score.name}</div>
-                    <div class="org">${score.organization}</div>
-                </div>
-                <div class="score-info">
-                    <div class="captured">${score.captured}/${score.totalModels}</div>
-                    <div class="time">${timeText}</div>
-                    <div class="date">${score.date}</div>
-                </div>
-            `;
-            grid.appendChild(item);
-        });
+    calculateScore(gameTime, captured) {
+        const baseScore = captured * 1000;
+        const timeBonus = Math.max(0, (this.gameTimeLimit - gameTime) / 1000);
+        return Math.round(baseScore + timeBonus);
     }
     
     formatTime(ms) {
