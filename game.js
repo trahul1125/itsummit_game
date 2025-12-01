@@ -104,6 +104,12 @@ class AIHunterGame {
             this.hideModal('complete-modal');
             this.showInventory();
         });
+        
+        document.getElementById('finish-game-btn').addEventListener('click', async () => {
+            const gameTime = Date.now() - this.gameStartTime;
+            await this.saveToJsonBin(gameTime);
+            alert('✅ Score saved to leaderboard!');
+        });
 
 
 
@@ -579,9 +585,7 @@ class AIHunterGame {
         this.showModal('success-modal');
     }
     
-    async gameComplete() {
-        const gameTime = Date.now() - this.gameStartTime;
-        await this.saveToJsonBin(gameTime);
+    gameComplete() {
         document.getElementById('complete-message').textContent = 
             `Congratulations ${this.user.name}! You've captured all ${this.aiModels.length} AI models!`;
         this.showModal('complete-modal');
@@ -1149,6 +1153,17 @@ async function testJsonBin() {
         }
     } catch (error) {
         alert('❌ Test error: ' + error.message);
+    }
+}
+
+function skipToEnd() {
+    if (window.gameInstance) {
+        window.gameInstance.aiModels.forEach(ai => ai.caught = true);
+        window.gameInstance.userStats.totalCaptured = 15;
+        window.gameInstance.updateProgress();
+        window.gameInstance.updateInventory();
+        window.gameInstance.updateUserStats();
+        window.gameInstance.gameComplete();
     }
 }
 
