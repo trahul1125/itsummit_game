@@ -9,6 +9,11 @@ app.use(cors())
 app.use(express.json())
 app.use(express.static('.'))
 
+// Health check
+app.get('/', (req, res) => {
+  res.json({ status: 'AI Hunter API is running', timestamp: new Date().toISOString() })
+})
+
 // Test endpoint
 app.get('/api/test', (req, res) => {
   res.json({ status: 'Server is running', timestamp: new Date().toISOString() })
@@ -49,6 +54,6 @@ app.get('/api/scores', async (req, res) => {
   }
 })
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`)
 })
