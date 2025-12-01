@@ -100,11 +100,6 @@ class AIHunterGame {
             this.showAIInfo();
         });
 
-        document.getElementById('view-collection-btn').addEventListener('click', () => {
-            this.hideModal('complete-modal');
-            this.showInventory();
-        });
-        
         document.getElementById('finish-game-btn').addEventListener('click', async () => {
             const gameTime = Date.now() - this.gameStartTime;
             await this.saveToJsonBin(gameTime);
@@ -594,7 +589,7 @@ class AIHunterGame {
     async saveToJsonBin(gameTime) {
         try {
             // First get existing data
-            const getResponse = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee/latest', {
+            const getResponse = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee', {
                 headers: {
                     'X-Master-Key': '$2a$10$hl8RiwmuMk16Yo4UDtezcedlmX9w4GFAsPSAn14g1LFhphVHJVnhC'
                 }
@@ -604,6 +599,7 @@ class AIHunterGame {
             if (getResponse.ok) {
                 const result = await getResponse.json();
                 existingData = result.record || { completions: [] };
+                if (!existingData.completions) existingData.completions = [];
             }
             
             // Add new completion
@@ -1142,6 +1138,20 @@ class AIHunterGame {
 
 async function testJsonBin() {
     try {
+        // Get existing data first
+        const getResponse = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee', {
+            headers: {
+                'X-Master-Key': '$2a$10$hl8RiwmuMk16Yo4UDtezcedlmX9w4GFAsPSAn14g1LFhphVHJVnhC'
+            }
+        });
+        
+        let existingData = { completions: [] };
+        if (getResponse.ok) {
+            const result = await getResponse.json();
+            existingData = result.record || { completions: [] };
+            if (!existingData.completions) existingData.completions = [];
+        }
+        
         const testData = {
             name: 'Test Player',
             organization: 'Test Org',
@@ -1150,15 +1160,15 @@ async function testJsonBin() {
             timestamp: Date.now()
         };
         
+        existingData.completions.push(testData);
+        
         const response = await fetch('https://api.jsonbin.io/v3/b/692ddc65d0ea881f400c16ee', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Master-Key': '$2a$10$hl8RiwmuMk16Yo4UDtezcedlmX9w4GFAsPSAn14g1LFhphVHJVnhC'
             },
-            body: JSON.stringify({
-                completions: [testData]
-            })
+            body: JSON.stringify(existingData)
         });
         
         if (response.ok) {
