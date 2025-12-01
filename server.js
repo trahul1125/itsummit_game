@@ -18,7 +18,7 @@ app.post('/api/scores', async (req, res) => {
   
   const result = await sql`
     INSERT INTO "Leaderboard" ("id","Name", Organization, Time, "Rank")
-    VALUES (${name}, ${organization}, ${gameTime}, ${rank})
+    VALUES (${id}, ${name}, ${organization}, ${gameTime}, ${rank})
     RETURNING *
   `
   
