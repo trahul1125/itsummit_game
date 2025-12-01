@@ -7,7 +7,7 @@ class AIHunterGame {
         this.userStats = { totalCaptured: 0, totalModels: 15 };
         
         this.aiModels = [
-            { name: 'GPT-4', emoji: '🤖', caught: false, rarity: 'legendary', info: { en: 'GPT-4 is OpenAI\'s most advanced language model, capable of understanding and generating human-like text with remarkable accuracy and creativity.', ja: 'GPT-4はOpenAIの最も高度な言語モデルで、驚くべき精度と創造性で人間のようなテキストを理解し生成することができます。' } },
+            { name: 'GPT', emoji: '🤖', caught: false, rarity: 'legendary', info: { en: 'GPT-4 is OpenAI\'s most advanced language model, capable of understanding and generating human-like text with remarkable accuracy and creativity.', ja: 'GPT-4はOpenAIの最も高度な言語モデルで、驚くべき精度と創造性で人間のようなテキストを理解し生成することができます。' } },
             { name: 'Claude', emoji: '🧠', caught: false, rarity: 'legendary', info: { en: 'Claude is Anthropic\'s AI assistant focused on being helpful, harmless, and honest through constitutional AI training methods.', ja: 'ClaudeはAnthropicのAIアシスタントで、憲法的AI訓練方法により、有用で無害で正直であることに焦点を当てています。' } },
             { name: 'Gemini', emoji: '💎', caught: false, rarity: 'epic', info: { en: 'Gemini is Google\'s multimodal AI model that can understand and process text, images, audio, and video simultaneously.', ja: 'GeminiはGoogleのマルチモーダルAIモデルで、テキスト、画像、音声、動画を同時に理解し処理することができます。' } },
             { name: 'LLaMA', emoji: '🦙', caught: false, rarity: 'epic', info: { en: 'LLaMA (Large Language Model Meta AI) is Meta\'s foundation language model designed for research and commercial applications.', ja: 'LLaMA（Large Language Model Meta AI）は、研究および商用アプリケーション向けに設計されたMetaの基盤言語モデルです。' } },
@@ -1165,3 +1165,4 @@ class AIHunterGame {
 document.addEventListener('DOMContentLoaded', () => {
     window.gameInstance = new AIHunterGame();
 });
+
