@@ -158,6 +158,7 @@ class AIHunterGame {
         } catch (error) {
             alert('Camera access is required to play. Please allow camera permissions and try again.');
             console.error('Camera error:', error);
+        }:', error);
         }
     }
 
