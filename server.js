@@ -22,14 +22,11 @@ app.get('/api/test', (req, res) => {
 // API Routes
 app.post('/api/scores', async (req, res) => {
   try {
-    const { name, organization, captured, totalModels, gameTime, completionRate } = req.body
-    
-    // Calculate rank based on captured count and time
-    const rank = captured === totalModels ? 1 : Math.floor(Math.random() * 100) + 1
+    const { name, organization, time, rank } = req.body
     
     const result = await sql`
-      INSERT INTO "Leaderboard" ("Name", organization, time, "rank")
-      VALUES (${name}, ${organization}, ${gameTime}, ${rank})
+      INSERT INTO "Leaderboard" ("Name", organization, time, rank)
+      VALUES (${name}, ${organization}, ${time}, ${rank})
       RETURNING *
     `
     
@@ -44,7 +41,7 @@ app.get('/api/scores', async (req, res) => {
   try {
     const scores = await sql`
       SELECT * FROM "Leaderboard" 
-      ORDER BY "rank" ASC, time ASC 
+      ORDER BY rank ASC, time ASC 
       LIMIT 20
     `
     res.json(scores)
