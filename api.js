@@ -12,12 +12,20 @@ class GameAPI {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(scoreData)
     })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(`API Error: ${error.error || response.statusText}`)
+    }
     return response.json()
   }
 
   async getScores() {
     if (!this.enabled) throw new Error('API disabled')
     const response = await fetch(`${this.baseURL}/api/scores`)
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(`API Error: ${error.error || response.statusText}`)
+    }
     return response.json()
   }
 
