@@ -167,6 +167,12 @@
     </div>
 
 
+    <script>
+        // Register service worker for HTTPS compatibility
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
+        }
+    </script>
     <script src="game.js"></script>
 </body>
 </html>
