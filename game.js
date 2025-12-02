@@ -100,9 +100,22 @@ class AIHunterGame {
             this.showAIInfo();
         });
 
-        document.getElementById('finish-game-btn').addEventListener('click', async () => {
+        document.getElementById('finish-game-btn').addEventListener('click', async (e) => {
+            const btn = e.target;
+            if (btn.disabled) return; // Prevent multiple clicks
+            
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.textContent = this.language === 'ja' ? '保存中...' : 'SAVING...';
+            btn.style.opacity = '0.7';
+            
             const gameTime = Date.now() - this.gameStartTime;
             await this.saveToJsonBin(gameTime);
+            
+            btn.textContent = originalText;
+            btn.style.opacity = '1';
+            btn.disabled = false;
+            
             this.showSaveConfirmation();
         });
 
@@ -1326,26 +1339,12 @@ class AIHunterGame {
                     font-size: 14px;
                     margin-bottom: 30px;
                 ">${this.language === 'ja' ? 'AIハンターをお楽しみいただきありがとうございました！' : 'We hope you enjoyed AI Hunter!'}</p>
-                <button onclick="location.reload()" style="
-                    padding: 12px 24px;
-                    background: #00f0ff;
-                    border: none;
-                    border-radius: 8px;
-                    color: #1a1a2e;
-                    font-family: 'Orbitron', sans-serif;
-                    font-weight: bold;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                ">${this.language === 'ja' ? 'もう一度プレイ' : 'Play Again'}</button>
             </div>
         `;
         
         document.body.appendChild(thankYouModal);
         
-        // Auto-close after 10 seconds
-        setTimeout(() => {
-            thankYouModal.remove();
-        }, 10000);
+        // No auto-close - stays until user manually closes browser/tab
     }
     
 
