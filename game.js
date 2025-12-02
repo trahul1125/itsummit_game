@@ -68,6 +68,9 @@ class AIHunterGame {
         this.updateUserStats();
         this.updateLanguage();
         this.showLanguagePrompt();
+        
+        // Show tutorial for first-time users
+        setTimeout(() => this.showTutorial(), 1000);
     }
     
 
@@ -588,9 +591,7 @@ class AIHunterGame {
         document.getElementById('capture-message').textContent = 
             this.language === 'ja' ? `${captured.name}をコレクションに追加しました！` : `${captured.name} has been added to your collection!`;
         
-        if (navigator.vibrate) {
-            navigator.vibrate([100, 50, 100]);
-        }
+        this.hapticFeedback('capture');
         
         this.currentAI = null;
         this.aiScreenPos = null;
@@ -615,6 +616,7 @@ class AIHunterGame {
     gameComplete() {
         document.getElementById('complete-message').textContent = 
             `Congratulations ${this.user.name}! You've captured all ${this.aiModels.length} AI models!`;
+        this.hapticFeedback('complete');
         this.showModal('complete-modal');
     }
     
@@ -809,6 +811,7 @@ class AIHunterGame {
         notification.innerHTML = `<div style="color: #ff3366;">🎯 ${targetText}</div><div style="font-size: 11px; color: #00f0ff; margin-top: 4px;">${this.currentAI.name}</div>`;
         document.body.appendChild(notification);
         
+        this.hapticFeedback('spawn');
         setTimeout(() => notification.remove(), 4000);
     }
     
@@ -1168,6 +1171,129 @@ class AIHunterGame {
         this.updateInventory();
         this.updateUserStats();
         this.gameComplete();
+    }
+
+    hapticFeedback(type) {
+        if (!navigator.vibrate) return;
+        
+        const patterns = {
+            capture: [200, 100, 200],     // Success pattern
+            spawn: [50, 50, 50],          // Quick pulse
+            error: [300, 100, 300, 100, 300], // Error pattern
+            complete: [100, 50, 100, 50, 100, 50, 300], // Victory
+            target: [30],                 // Subtle feedback
+            button: [10]                  // Light tap
+        };
+        
+        navigator.vibrate(patterns[type] || [50]);
+    }
+
+    showTutorial() {
+        const isFirstTime = !localStorage.getItem('aiHunterTutorialSeen');
+        if (!isFirstTime) return;
+        
+        const tutorial = document.createElement('div');
+        tutorial.id = 'tutorial-overlay';
+        tutorial.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 4000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        `;
+        
+        const steps = [
+            {
+                title: this.language === 'ja' ? 'AI ハンターへようこそ！' : 'Welcome to AI Hunter!',
+                text: this.language === 'ja' ? 'デバイスを動かしてAIモデルを探し、捕獲しましょう。' : 'Move your device to find and capture AI models.',
+                icon: '🎯'
+            },
+            {
+                title: this.language === 'ja' ? 'ターゲットを探す' : 'Find Targets',
+                text: this.language === 'ja' ? 'レーダーと方向矢印を使ってAIを見つけてください。' : 'Use the radar and direction arrows to locate AIs.',
+                icon: '📡'
+            },
+            {
+                title: this.language === 'ja' ? '捕獲する' : 'Capture',
+                text: this.language === 'ja' ? 'ターゲットフレーム内にAIを入れて捕獲ボタンを押してください。' : 'Get the AI in the targeting frame and press capture.',
+                icon: '🎮'
+            }
+        ];
+        
+        let currentStep = 0;
+        
+        const updateTutorial = () => {
+            const step = steps[currentStep];
+            tutorial.innerHTML = `
+                <div style="
+                    background: linear-gradient(135deg, #1a1a2e, #16213e);
+                    border: 2px solid #00f0ff;
+                    border-radius: 20px;
+                    padding: 40px;
+                    text-align: center;
+                    max-width: 400px;
+                    color: white;
+                    font-family: 'Orbitron', sans-serif;
+                    transform: scale(0.9);
+                    transition: transform 0.3s ease;
+                ">
+                    <div style="font-size: 80px; margin-bottom: 20px; animation: pulse 2s infinite;">${step.icon}</div>
+                    <h3 style="color: #00f0ff; margin-bottom: 15px; font-size: 1.5rem;">${step.title}</h3>
+                    <p style="line-height: 1.6; margin-bottom: 30px; color: rgba(255,255,255,0.8);">${step.text}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="color: rgba(255,255,255,0.5); font-size: 12px;">${currentStep + 1}/${steps.length}</div>
+                        <button id="tutorial-next" style="
+                            padding: 12px 24px;
+                            background: #00f0ff;
+                            border: none;
+                            border-radius: 8px;
+                            color: #1a1a2e;
+                            font-family: 'Orbitron', sans-serif;
+                            font-weight: bold;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        ">${currentStep === steps.length - 1 ? (this.language === 'ja' ? '開始' : 'START') : (this.language === 'ja' ? '次へ' : 'NEXT')}</button>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                tutorial.querySelector('div').style.transform = 'scale(1)';
+            }, 100);
+        };
+        
+        document.body.appendChild(tutorial);
+        updateTutorial();
+        
+        // Add pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        setTimeout(() => tutorial.style.opacity = '1', 100);
+        
+        tutorial.addEventListener('click', (e) => {
+            if (e.target.id === 'tutorial-next') {
+                this.hapticFeedback('button');
+                currentStep++;
+                if (currentStep >= steps.length) {
+                    tutorial.style.opacity = '0';
+                    setTimeout(() => tutorial.remove(), 500);
+                    localStorage.setItem('aiHunterTutorialSeen', 'true');
+                } else {
+                    updateTutorial();
+                }
+            }
+        });
     }
 
     showLanguagePrompt() {
