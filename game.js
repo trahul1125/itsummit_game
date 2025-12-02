@@ -787,6 +787,7 @@ class AIHunterGame {
     startMovementPhase() {
         const uncaught = this.aiModels.filter(ai => !ai.caught);
         if (uncaught.length === 0) {
+            this.gameComplete();
             return;
         }
         
