@@ -8,7 +8,7 @@ class AIHunterGame {
         
         this.aiModels = [
             { name: 'Context Engineering', emoji: '🎯', caught: false, rarity: 'legendary', info: { en: 'Context Engineering is the art of crafting precise prompts and context to guide AI models toward desired outputs and behaviors.', ja: 'コンテキストエンジニアリングは、AIモデルを望ましい出力と動作に導くための正確なプロンプトとコンテキストを作成する技術です。' } },
-            { name: 'Toon', emoji: '🎨', caught: false, rarity: 'epic', info: { en: 'Toon refers to AI-generated cartoon and animation content, revolutionizing digital art and entertainment creation.', ja: 'Toonは、AI生成の漫画やアニメーションコンテンツを指し、デジタルアートとエンターテイメント制作に革命をもたらしています。' } },
+            { name: 'Toon', emoji: '📋', caught: false, rarity: 'epic', info: { en: 'Token Oriented Object Notation (TOON) is a structured data format optimized for AI model communication and data exchange.', ja: 'Token Oriented Object Notation (TOON)は、AIモデルの通信とデータ交換に最適化された構造化データフォーマットです。' } },
             { name: 'LSTM', emoji: '🔗', caught: false, rarity: 'rare', info: { en: 'Long Short-Term Memory networks are specialized neural networks designed to remember information for long periods in sequence processing.', ja: 'LSTM（Long Short-Term Memory）は、シーケンス処理において長期間情報を記憶するように設計された特殊なニューラルネットワークです。' } },
             { name: 'SLM', emoji: '📱', caught: false, rarity: 'epic', info: { en: 'Small Language Models are compact AI models optimized for efficiency while maintaining strong performance on specific tasks.', ja: 'SLM（Small Language Model）は、特定のタスクで強力な性能を維持しながら効率性を最適化したコンパクトなAIモデルです。' } },
             { name: 'Foundation Model', emoji: '🏗️', caught: false, rarity: 'legendary', info: { en: 'Foundation Models are large-scale pre-trained models that serve as the base for various AI applications and fine-tuning.', ja: 'ファウンデーションモデルは、様々なAIアプリケーションとファインチューニングのベースとなる大規模な事前訓練済みモデルです。' } },
@@ -151,13 +151,17 @@ class AIHunterGame {
             
         } catch (error) {
             console.error('Camera error:', error);
+            let errorMessage = '';
             if (error.name === 'NotAllowedError') {
-                alert('Camera permission denied. Please allow camera access and refresh.');
+                errorMessage = 'Camera permission denied. Please:\n1. Allow camera access\n2. Try incognito/private mode\n3. Use HTTPS or localhost';
             } else if (error.name === 'NotFoundError') {
-                alert('No camera found. Please connect a camera.');
+                errorMessage = 'No camera found. Please connect a camera.';
+            } else if (error.name === 'NotSupportedError') {
+                errorMessage = 'Camera not supported. Try:\n1. Using Chrome/Safari\n2. HTTPS connection\n3. Incognito mode';
             } else {
-                alert('Camera error: ' + error.message + '. Try using HTTPS or localhost.');
+                errorMessage = 'Camera error: ' + error.message + '\n\nTry:\n1. Incognito/private mode\n2. HTTPS or localhost\n3. Different browser';
             }
+            alert(errorMessage);
         }
     }
 
@@ -410,7 +414,7 @@ class AIHunterGame {
             if (this.currentAI.positionHint && !this.aiVisible) {
                 targetLabel.textContent = this.currentAI.positionHint;
             } else {
-                targetLabel.textContent = this.language === 'ja' ? 'ターゲット獲得' : 'TARGET ACQUIRED';
+                targetLabel.textContent = this.language === 'ja' ? 'ターゲット検出' : 'TARGET DETECTED';
             }
             
             scanIndicator.classList.add('hidden');
@@ -1124,13 +1128,7 @@ class AIHunterGame {
     }
     
     getMovementDistance(rarity) {
-        switch(rarity) {
-            case 'common': return 1 + Math.random();
-            case 'rare': return 2 + Math.random();
-            case 'epic': return 3 + Math.random();
-            case 'legendary': return 3 + Math.random();
-            default: return 2;
-        }
+        return 1; // Uniform 1 meter requirement
     }
     
 
