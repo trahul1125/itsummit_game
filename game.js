@@ -67,7 +67,7 @@ class AIHunterGame {
         this.updateProgress();
         this.updateUserStats();
         this.updateLanguage();
-
+        this.showLanguagePrompt();
     }
     
 
@@ -104,6 +104,13 @@ class AIHunterGame {
             const gameTime = Date.now() - this.gameStartTime;
             await this.saveToJsonBin(gameTime);
             alert('✅ Score saved to leaderboard!');
+        });
+
+        // Skip button for testing
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'S' && e.shiftKey) {
+                this.skipToCompletion();
+            }
         });
 
 
@@ -581,7 +588,18 @@ class AIHunterGame {
         this.updateProgress();
         this.updateInventory();
         this.updateUserStats();
-        this.showModal('success-modal');
+        
+        // Check if game is complete immediately after capture
+        const uncaught = this.aiModels.filter(ai => !ai.caught);
+        if (uncaught.length === 0) {
+            // Game complete - skip normal flow and go straight to completion
+            setTimeout(() => {
+                this.hideModal('success-modal');
+                this.gameComplete();
+            }, 2000);
+        } else {
+            this.showModal('success-modal');
+        }
     }
     
     gameComplete() {
@@ -1130,6 +1148,107 @@ class AIHunterGame {
     
     getMovementDistance(rarity) {
         return 1; // Uniform 1 meter requirement
+    }
+
+    skipToCompletion() {
+        // Mark all AIs as caught for testing
+        this.aiModels.forEach(ai => ai.caught = true);
+        this.userStats.totalCaptured = this.aiModels.length;
+        this.updateProgress();
+        this.updateInventory();
+        this.updateUserStats();
+        this.gameComplete();
+    }
+
+    showLanguagePrompt() {
+        const prompt = document.createElement('div');
+        prompt.id = 'language-prompt';
+        prompt.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #00f0ff;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            z-index: 2000;
+            font-family: 'Orbitron', sans-serif;
+            color: white;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+            animation: bounceIn 0.6s ease;
+        `;
+        
+        prompt.innerHTML = `
+            <div style="font-size: 60px; margin-bottom: 20px; animation: wave 2s infinite;">🤖</div>
+            <h3 style="color: #00f0ff; margin-bottom: 15px;">Welcome to AI Hunter!</h3>
+            <p style="margin-bottom: 25px; color: rgba(255,255,255,0.8);">Would you like to play in Japanese?</p>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button id="play-japanese" style="
+                    padding: 12px 24px;
+                    background: #00f0ff;
+                    border: none;
+                    border-radius: 8px;
+                    color: #1a1a2e;
+                    font-family: 'Orbitron', sans-serif;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">はい (Yes)</button>
+                <button id="play-english" style="
+                    padding: 12px 24px;
+                    background: rgba(255,255,255,0.1);
+                    border: 1px solid rgba(255,255,255,0.3);
+                    border-radius: 8px;
+                    color: white;
+                    font-family: 'Orbitron', sans-serif;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">English</button>
+            </div>
+        `;
+        
+        document.body.appendChild(prompt);
+        
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes bounceIn {
+                0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+                50% { transform: translate(-50%, -50%) scale(1.05); }
+                70% { transform: translate(-50%, -50%) scale(0.9); }
+                100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            }
+            @keyframes wave {
+                0%, 100% { transform: rotate(0deg); }
+                25% { transform: rotate(-10deg); }
+                75% { transform: rotate(10deg); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Event listeners
+        document.getElementById('play-japanese').addEventListener('click', () => {
+            this.language = 'ja';
+            document.getElementById('language-select').value = 'ja';
+            this.updateLanguage();
+            prompt.remove();
+        });
+        
+        document.getElementById('play-english').addEventListener('click', () => {
+            this.language = 'en';
+            document.getElementById('language-select').value = 'en';
+            this.updateLanguage();
+            prompt.remove();
+        });
+        
+        // Auto-close after 10 seconds (default to English)
+        setTimeout(() => {
+            if (document.getElementById('language-prompt')) {
+                prompt.remove();
+            }
+        }, 10000);
     }
     
 
