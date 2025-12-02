@@ -106,13 +106,6 @@ class AIHunterGame {
             alert('✅ Score saved to leaderboard!');
         });
 
-        // Skip button for testing
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'S' && e.shiftKey) {
-                this.skipToCompletion();
-            }
-        });
-
 
 
 
@@ -1148,16 +1141,6 @@ class AIHunterGame {
     
     getMovementDistance(rarity) {
         return 1; // Uniform 1 meter requirement
-    }
-
-    skipToCompletion() {
-        // Mark all AIs as caught for testing
-        this.aiModels.forEach(ai => ai.caught = true);
-        this.userStats.totalCaptured = this.aiModels.length;
-        this.updateProgress();
-        this.updateInventory();
-        this.updateUserStats();
-        this.gameComplete();
     }
 
     showLanguagePrompt() {
