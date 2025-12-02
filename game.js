@@ -103,7 +103,7 @@ class AIHunterGame {
         document.getElementById('finish-game-btn').addEventListener('click', async () => {
             const gameTime = Date.now() - this.gameStartTime;
             await this.saveToJsonBin(gameTime);
-            alert('✅ Score saved to leaderboard!');
+            this.showSaveConfirmation();
         });
 
 
@@ -1231,6 +1231,120 @@ class AIHunterGame {
             if (document.getElementById('language-prompt')) {
                 prompt.remove();
             }
+        }, 10000);
+    }
+
+    showSaveConfirmation() {
+        const saveMessage = this.language === 'ja' ? '✅ スコアがリーダーボードに保存されました！' : '✅ Score saved to leaderboard!';
+        
+        const confirmModal = document.createElement('div');
+        confirmModal.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        `;
+        
+        confirmModal.innerHTML = `
+            <div style="
+                background: linear-gradient(135deg, #1a1a2e, #16213e);
+                border: 2px solid #10b981;
+                border-radius: 16px;
+                padding: 30px;
+                text-align: center;
+                color: white;
+                font-family: 'Orbitron', sans-serif;
+                max-width: 400px;
+            ">
+                <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
+                <p style="font-size: 16px; margin-bottom: 20px;">${saveMessage}</p>
+                <button id="confirm-ok" style="
+                    padding: 12px 24px;
+                    background: #10b981;
+                    border: none;
+                    border-radius: 8px;
+                    color: white;
+                    font-family: 'Orbitron', sans-serif;
+                    cursor: pointer;
+                ">${this.language === 'ja' ? 'OK' : 'OK'}</button>
+            </div>
+        `;
+        
+        document.body.appendChild(confirmModal);
+        
+        const showThankYou = () => {
+            confirmModal.remove();
+            this.showThankYouMessage();
+        };
+        
+        document.getElementById('confirm-ok').addEventListener('click', showThankYou);
+        
+        // Auto-close after 5 seconds
+        setTimeout(showThankYou, 5000);
+    }
+
+    showThankYouMessage() {
+        const thankYouModal = document.createElement('div');
+        thankYouModal.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(22, 33, 62, 0.95));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            backdrop-filter: blur(10px);
+        `;
+        
+        const thankYouText = this.language === 'ja' ? 
+            'プレイしていただきありがとうございました！' : 
+            'Thank you for playing!';
+        
+        thankYouModal.innerHTML = `
+            <div style="
+                text-align: center;
+                color: white;
+                font-family: 'Orbitron', sans-serif;
+            ">
+                <div style="
+                    font-size: 120px; 
+                    margin-bottom: 30px; 
+                    animation: wave 1.5s infinite;
+                    filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.5));
+                ">🤖</div>
+                <h2 style="
+                    color: #00f0ff; 
+                    margin-bottom: 20px; 
+                    font-size: 2rem;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+                ">${thankYouText}</h2>
+                <p style="
+                    color: rgba(255,255,255,0.8); 
+                    font-size: 14px;
+                    margin-bottom: 30px;
+                ">${this.language === 'ja' ? 'AIハンターをお楽しみいただきありがとうございました！' : 'We hope you enjoyed AI Hunter!'}</p>
+                <button onclick="location.reload()" style="
+                    padding: 12px 24px;
+                    background: #00f0ff;
+                    border: none;
+                    border-radius: 8px;
+                    color: #1a1a2e;
+                    font-family: 'Orbitron', sans-serif;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">${this.language === 'ja' ? 'もう一度プレイ' : 'Play Again'}</button>
+            </div>
+        `;
+        
+        document.body.appendChild(thankYouModal);
+        
+        // Auto-close after 10 seconds
+        setTimeout(() => {
+            thankYouModal.remove();
         }, 10000);
     }
     
